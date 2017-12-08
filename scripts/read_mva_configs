@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+'''
+Script to read and display the configuration for a given
+file or set of files.
+'''
+
+__author__ = 'Miguel Ramos Pernas'
+__email__  = 'miguel.ramos.pernas@cern.ch'
+
+
+# Python
+from argparse import ArgumentParser
+
+# Local
+import config
+
+
+# Build the parser
+parser = ArgumentParser(description = 'Read and display the configuration(s) '\
+                            'stored in the given file(s)')
+parser.add_argument('files', nargs = '+',
+                    help = 'Set of files to parse'
+                    )
+
+args = parser.parse_args()
+
+# Iterate over the input files to print the configurations
+for f in args.files:
+
+    name, config = config.readxmlconfig(f)
+
+    print '-- Configuration in file "{}" (tag: "{}")'.format(f, name)
+
+    config.print_configuration(config)
