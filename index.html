@@ -24,7 +24,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="mvacfg" href="includeme.html" />
+    <link rel="next" title="Introduction" href="introduction.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -44,15 +44,29 @@
 <h1>Welcome to mvacfg’s documentation!<a class="headerlink" href="#welcome-to-mvacfg-s-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="includeme.html">mvacfg</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="config.html">config</a></li>
-<li class="toctree-l2"><a class="reference internal" href="plot.html">plot</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html">utils</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="includeme.html#module-mvacfg.examples">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot.html">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a></li>
 </ul>
 </div>
+</div>
+<div class="section" id="module-mvacfg.examples">
+<span id="examples"></span><h1>Examples<a class="headerlink" href="#module-mvacfg.examples" title="Permalink to this headline">¶</a></h1>
+<p>To run an example type</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mvacfg</span> <span class="k">import</span> <span class="n">examples</span> <span class="k">as</span> <span class="n">ex</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ex</span><span class="o">.&lt;</span><span class="n">example</span><span class="o">-</span><span class="n">name</span><span class="o">&gt;.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>All the examples have a function called “main” which executes the example. To see the available examples simply access</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ex</span><span class="o">.</span><span class="n">__all__</span>
+</pre></div>
+</div>
+<p>what will of course return the modules that will be imported when calling</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mvacfg.examples</span> <span class="k">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>in this case, all the available examples. The examples can be executed as a script too.</p>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -80,15 +94,17 @@
 
 <h3>Navigation</h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="includeme.html">mvacfg</a></li>
-<li class="toctree-l1"><a class="reference internal" href="includeme.html#module-mvacfg.examples">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot.html">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="includeme.html" title="next chapter">mvacfg</a></li>
+      <li>Next: <a href="introduction.html" title="next chapter">Introduction</a></li>
   </ul></li>
 </ul>
 </div>
