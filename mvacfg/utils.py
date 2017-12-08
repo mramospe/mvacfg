@@ -449,7 +449,7 @@ class StdMVAmethod(MVAmethod):
         :param sigtrainfrac: fraction of signal events used for \
         training.
         :type sigtrainfrac: float
-        :param sigtrainfrac: fraction of background events used \
+        :param bkgtrainfrac: fraction of background events used \
         for training.
         :type bkgtrainfrac: float
         '''
