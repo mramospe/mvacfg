@@ -24,6 +24,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="plot" href="plot.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -39,12 +40,377 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="utils">
-<h1>utils<a class="headerlink" href="#utils" title="Permalink to this headline">¶</a></h1>
-<p>Module providing a function <code class="xref py py-func docutils literal"><span class="pre">mvacfg.mva_study()</span></code>, which is the center
-of this package. It allows to train MVA methods saving its configurations,
-preventing to repeat the same configuration twice. It also saves a
-instance to apply the MVA output.</p>
+  <div class="section" id="module-mvacfg.utils">
+<span id="utils"></span><h1>utils<a class="headerlink" href="#module-mvacfg.utils" title="Permalink to this headline">¶</a></h1>
+<p>Module to perform trainings of MVA methods and store
+their configuration.</p>
+<dl class="class">
+<dt id="mvacfg.utils.KFoldMVAmgr">
+<em class="property">class </em><code class="descclassname">mvacfg.utils.</code><code class="descname">KFoldMVAmgr</code><span class="sig-paren">(</span><em>classifier</em>, <em>features</em>, <em>nfolds</em>, <em>splitvar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">mvacfg.utils.MVAmgr</span></code></p>
+<p>Manager that uses the k-folding technique, splitting the total
+sample in “n” folds, using “n - 1” to train the remaining
+fold, which is used as a test sample.</p>
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>classifier</em>, <em>features</em>, <em>nfolds</em>, <em>splitvar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor given the classifier, features, number of
+folds and the integer variable used to split the sample.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>classifier</strong> (<em>MVA classifier.</em>) – classifier to use.</li>
+<li><strong>features</strong> (<em>list of str</em>) – variables for training.</li>
+<li><strong>nfolds</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – number of folds to generate.</li>
+<li><strong>splitvar</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – variable used to split the sample in folds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mvacfg.utils.KFoldMVAmgr.__min_tolerance__">
+<code class="descname">__min_tolerance__</code><em class="property"> = 0.1</em><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.__min_tolerance__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mvacfg.utils.KFoldMVAmgr.__module__">
+<code class="descname">__module__</code><em class="property"> = 'mvacfg.utils'</em><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>sample</em>, <em>decname='mva_dec'</em>, <em>predname='mva_pred'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the values for the train and test samples. Apply
+to the full samples, and then split (save computational
+time).</p>
+<p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.apply()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.apply_for_overtraining">
+<code class="descname">apply_for_overtraining</code><span class="sig-paren">(</span><em>dt</em>, <em>sample</em>, <em>decname='mva_dec'</em>, <em>predname='mva_pred'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.apply_for_overtraining"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.apply_for_overtraining" title="Permalink to this definition">¶</a></dt>
+<dd><p>In this case, the mean of the values of the BDT is taken.</p>
+<p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.apply_for_overtraining()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.extravars">
+<code class="descname">extravars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.extravars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.extravars" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.extravars()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>sig</em>, <em>bkg</em>, <em>issig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.fit()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save this MVA manager to a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path to the output file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.test_sample">
+<code class="descname">test_sample</code><span class="sig-paren">(</span><em>smp</em>, <em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.test_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.test_sample" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>smp</strong> (<em>pandas.DataFrame</em>) – input sample.</li>
+<li><strong>i</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – fold number.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">subsample satisfying the testing condition.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmgr.train_sample">
+<code class="descname">train_sample</code><span class="sig-paren">(</span><em>smp</em>, <em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmgr.train_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmgr.train_sample" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>smp</strong> (<em>pandas.DataFrame</em>) – input sample.</li>
+<li><strong>i</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – fold number.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">subsample satisfying the training  condition.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mvacfg.utils.StdMVAmgr">
+<em class="property">class </em><code class="descclassname">mvacfg.utils.</code><code class="descname">StdMVAmgr</code><span class="sig-paren">(</span><em>classifier</em>, <em>features</em>, <em>sigtrainfrac</em>, <em>bkgtrainfrac</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#StdMVAmgr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.StdMVAmgr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">mvacfg.utils.MVAmgr</span></code></p>
+<p>Manager that uses the standard procedure of splitting the
+samples given the training and testing fractions.</p>
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmgr.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>classifier</em>, <em>features</em>, <em>sigtrainfrac</em>, <em>bkgtrainfrac</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#StdMVAmgr.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.__init__()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sigtrainfrac</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – fraction of signal events used for training.</li>
+<li><strong>bkgtrainfrac</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – fraction of background events used for training.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mvacfg.utils.StdMVAmgr.__module__">
+<code class="descname">__module__</code><em class="property"> = 'mvacfg.utils'</em><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmgr.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>sample</em>, <em>decname='mva_dec'</em>, <em>predname='mva_pred'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#StdMVAmgr.apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the MVA method values for the given sample.</p>
+<p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.apply()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmgr.apply_for_overtraining">
+<code class="descname">apply_for_overtraining</code><span class="sig-paren">(</span><em>dt</em>, <em>sample</em>, <em>decname='mva_dec'</em>, <em>predname='mva_pred'</em><span class="sig-paren">)</span><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.apply_for_overtraining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redefinition of the “apply” method given the sample type
+(train or test) to search for overtraining effects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a><em> (</em><em>'train'</em><em> or </em><em>'test'</em><em>)</em>) – type of the input sample.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.apply()</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmgr.extravars">
+<code class="descname">extravars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.extravars" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">extra variables needed for the class.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmgr.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>sig</em>, <em>bkg</em>, <em>issig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#StdMVAmgr.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-meth docutils literal"><span class="pre">MVAmgr.fit()</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmgr.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#mvacfg.utils.StdMVAmgr.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save this MVA manager to a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path to the output file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mvacfg.utils.KFoldMVAmethod">
+<em class="property">class </em><code class="descclassname">mvacfg.utils.</code><code class="descname">KFoldMVAmethod</code><span class="sig-paren">(</span><em>nfolds</em>, <em>splitvar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">mvacfg.utils.MVAmethod</span></code></p>
+<p>Define the k-folding method.</p>
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmethod.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nfolds</em>, <em>splitvar</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#KFoldMVAmethod.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.KFoldMVAmethod.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of folds and the variable to do the splitting must
+be provided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nfolds</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – number of folds to use.</li>
+<li><strong>splitvar</strong> – variable to split in folds.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mvacfg.utils.KFoldMVAmethod.__module__">
+<code class="descname">__module__</code><em class="property"> = 'mvacfg.utils'</em><a class="headerlink" href="#mvacfg.utils.KFoldMVAmethod.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.KFoldMVAmethod.build_mgr">
+<code class="descname">build_mgr</code><span class="sig-paren">(</span><em>classifier</em>, <em>features</em><span class="sig-paren">)</span><a class="headerlink" href="#mvacfg.utils.KFoldMVAmethod.build_mgr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a manager with the given MVA classifier.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>classifier</strong> (<em>scikit-learn classifier</em>) – MVA classifier.</li>
+<li><strong>features</strong> (<em>list</em>) – features of the classifier.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">MVA built object.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">MVA classifier.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mvacfg.utils.StdMVAmethod">
+<em class="property">class </em><code class="descclassname">mvacfg.utils.</code><code class="descname">StdMVAmethod</code><span class="sig-paren">(</span><em>sigtrainfrac=0.7</em>, <em>bkgtrainfrac=0.7</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#StdMVAmethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.StdMVAmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">mvacfg.utils.MVAmethod</span></code></p>
+<p>Define the standard method.</p>
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmethod.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>sigtrainfrac=0.7</em>, <em>bkgtrainfrac=0.7</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#StdMVAmethod.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.StdMVAmethod.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The training fractions for signal and background must
+be provided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sigtrainfrac</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – fraction of signal events used for         training.</li>
+<li><strong>sigtrainfrac</strong> – fraction of background events used         for training.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mvacfg.utils.StdMVAmethod.__module__">
+<code class="descname">__module__</code><em class="property"> = 'mvacfg.utils'</em><a class="headerlink" href="#mvacfg.utils.StdMVAmethod.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mvacfg.utils.StdMVAmethod.build_mgr">
+<code class="descname">build_mgr</code><span class="sig-paren">(</span><em>classifier</em>, <em>features</em><span class="sig-paren">)</span><a class="headerlink" href="#mvacfg.utils.StdMVAmethod.build_mgr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a manager with the given MVA classifier.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>classifier</strong> (<em>scikit-learn classifier</em>) – MVA classifier.</li>
+<li><strong>features</strong> (<em>list</em>) – features of the classifier.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">MVA built object.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">MVA classifier.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mvacfg.utils.mva_study">
+<code class="descclassname">mvacfg.utils.</code><code class="descname">mva_study</code><span class="sig-paren">(</span><em>name</em>, <em>signame</em>, <em>sigsmp</em>, <em>bkgname</em>, <em>bkgsmp</em>, <em>features</em>, <em>mvatype</em>, <em>mvaconfig=None</em>, <em>outdir='.'</em>, <em>methconfig=None</em>, <em>is_sig='is_sig'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/utils.html#mva_study"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.utils.mva_study" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function to perform a MVA study. The results are stored
+in three different files: one storing the histograms and the
+ROC curve, another with the configuration used to run this
+function, and the last stores the proper class to store the
+MVA algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – name of the study.</li>
+<li><strong>signame</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – signal sample name.</li>
+<li><strong>sigsmp</strong> (<em>pandas.DataFrame</em>) – signal sample.</li>
+<li><strong>bkgname</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – background sample name.</li>
+<li><strong>bkgsmp</strong> (<em>pandas.DataFrame</em>) – background sample.</li>
+<li><strong>features</strong> (<em>list of str</em><em> or </em><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><em>None</em></a>) – list of variables to use.</li>
+<li><strong>mvatype</strong> (<em>MVA classifier</em>) – type of MVA to execute.</li>
+<li><strong>mvaconfig</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – configuration of the MVA.</li>
+<li><strong>outdir</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – output directory.</li>
+<li><strong>methconfig</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – configuration of the MVA method.</li>
+<li><strong>is_sig</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – name for the additional column holding the     signal condition.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">MVA manager, training and testing samples.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)">tuple</a>(MVAmgr, pandas.DataFrame, pandas.DataFrame)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 
 
@@ -63,14 +429,17 @@ instance to apply the MVA output.</p>
 
 
 <h3>Navigation</h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="includeme.html">mvacfg</a></li>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot.html">plot</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">utils</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="plot.html" title="previous chapter">plot</a></li>
   </ul></li>
 </ul>
 </div>

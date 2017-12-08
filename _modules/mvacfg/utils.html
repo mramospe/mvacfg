@@ -1,0 +1,679 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mvacfg.utils &#8212; mvacfg 0.0.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mvacfg.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Module to perform trainings of MVA methods and store</span>
+<span class="sd">their configuration.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Miguel Ramos Pernas&#39;</span>
+<span class="n">__email__</span>  <span class="o">=</span> <span class="s1">&#39;miguel.ramos.pernas@cern.ch&#39;</span>
+
+
+<span class="c1"># Python</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">joblib</span><span class="o">,</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+
+<span class="c1"># Scikit-learn</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
+
+<span class="c1"># Local</span>
+<span class="kn">import</span> <span class="nn">mvacfg.config</span> <span class="k">as</span> <span class="nn">config</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;KFoldMVAmgr&#39;</span><span class="p">,</span> <span class="s1">&#39;StdMVAmgr&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;KFoldMVAmethod&#39;</span><span class="p">,</span> <span class="s1">&#39;StdMVAmethod&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;mva_study&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">MVAmgr</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Main class to store and apply a MVA algorithm.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">features</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        :param classifier: input MVA classifier.</span>
+<span class="sd">        :type classifier: MVA classifier</span>
+<span class="sd">        :param features: variables to use for training.</span>
+<span class="sd">        :type features: list of str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">classifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span>   <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_fit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">issig</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Fit the MVA classifier to the given samples.</span>
+<span class="sd">        </span>
+<span class="sd">        :param train_data: training data.</span>
+<span class="sd">        :type train_data: pandas.DataFrame</span>
+<span class="sd">        :param issig: flag to determine the signal condition.</span>
+<span class="sd">        :type issig: str</span>
+<span class="sd">        :returns: trained MVA classifier.</span>
+<span class="sd">        :rtype: MVA classifier</span>
+<span class="sd">        &#39;&#39;&#39;</span>        
+        <span class="nb">print</span> <span class="s1">&#39;---- Perform MVA training&#39;</span>
+        <span class="n">mva</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">],</span>
+                                  <span class="n">train_data</span><span class="p">[</span><span class="n">issig</span><span class="p">])</span>
+        <span class="nb">print</span> <span class="s1">&#39;---- MVA training finished&#39;</span>
+        <span class="k">return</span> <span class="n">mva</span>
+
+    <span class="k">def</span> <span class="nf">_process</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">mva</span><span class="p">,</span> <span class="n">smp</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Apply the given MVA algorithm to the given sample. The</span>
+<span class="sd">        result is a new DataFrame with the indices being preserved.</span>
+<span class="sd">        </span>
+<span class="sd">        :param mva: processed MVA classifier.</span>
+<span class="sd">        :type mva: MVA classifier</span>
+<span class="sd">        :param smp: sample to process.</span>
+<span class="sd">        :type smp: pandas.DataFrame</span>
+<span class="sd">        :returns: decision and prediction of the MVA response.</span>
+<span class="sd">        :rtype: tuple(array-like, array-like)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">dec</span>  <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">mva</span><span class="o">.</span><span class="n">decision_function</span><span class="p">(</span><span class="n">smp</span><span class="p">),</span>
+                                <span class="n">index</span> <span class="o">=</span> <span class="n">smp</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">mva</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">smp</span><span class="p">),</span>
+                                <span class="n">index</span> <span class="o">=</span> <span class="n">smp</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pred</span>
+
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">decname</span><span class="p">,</span> <span class="n">predname</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Virtual method to apply the stored MVA method to the</span>
+<span class="sd">        given sample.</span>
+
+<span class="sd">        :param sample: input sample to apply the MVA method.</span>
+<span class="sd">        :type sample: pandas.DataFrame</span>
+<span class="sd">        :param decname: name of the MVA response decision.</span>
+<span class="sd">        :type decname: str</span>
+<span class="sd">        :param predname: name of the MVA response prediction.</span>
+<span class="sd">        :type predname: str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Attempt to call abstract method&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">apply_for_overtraining</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">decname</span> <span class="o">=</span> <span class="s1">&#39;mva_dec&#39;</span><span class="p">,</span> <span class="n">predname</span> <span class="o">=</span> <span class="s1">&#39;mva_pred&#39;</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Redefinition of the &quot;apply&quot; method given the sample type</span>
+<span class="sd">        (train or test) to search for overtraining effects.</span>
+
+<span class="sd">        :param dt: type of the input sample.</span>
+<span class="sd">        :type dt: str (&#39;train&#39; or &#39;test&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        .. seealso:: :meth:`MVAmgr.apply`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">dt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="s1">&#39;ERROR: Unknown data type &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">decname</span><span class="p">,</span> <span class="n">predname</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extravars</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        :returns: extra variables needed for the class.</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">bkg</span><span class="p">,</span> <span class="n">issig</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Fit the MVA classifier to the given sample.</span>
+
+<span class="sd">        :param sig: signal sample.</span>
+<span class="sd">        :type sig: pandas.DataFrame</span>
+<span class="sd">        :param bkg: background sample.</span>
+<span class="sd">        :type bkg: pandas.DataFrame</span>
+<span class="sd">        :param issig: signal flag.</span>
+<span class="sd">        :type issig: str</span>
+<span class="sd">        :returns: training and testing data samples.</span>
+<span class="sd">        :rtype: tuple(pandas.DataFrame, pandas.DataFrame)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Attempt to call abstract method&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">path</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Save this MVA manager to a file.</span>
+
+<span class="sd">        :param path: path to the output file.</span>
+<span class="sd">        :type path: str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">joblib</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">compress</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s1">&#39;-- Output method saved in </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="KFoldMVAmgr"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr">[docs]</a><span class="k">class</span> <span class="nc">KFoldMVAmgr</span><span class="p">(</span><span class="n">MVAmgr</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Manager that uses the k-folding technique, splitting the total</span>
+<span class="sd">    sample in &quot;n&quot; folds, using &quot;n - 1&quot; to train the remaining</span>
+<span class="sd">    fold, which is used as a test sample.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">__min_tolerance__</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<div class="viewcode-block" id="KFoldMVAmgr.__init__"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">nfolds</span><span class="p">,</span> <span class="n">splitvar</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Constructor given the classifier, features, number of</span>
+<span class="sd">        folds and the integer variable used to split the sample.</span>
+
+<span class="sd">        :param classifier: classifier to use.</span>
+<span class="sd">        :type classifier: MVA classifier.</span>
+<span class="sd">        :param features: variables for training.</span>
+<span class="sd">        :type features: list of str</span>
+<span class="sd">        :param nfolds: number of folds to generate.</span>
+<span class="sd">        :type nfolds: int</span>
+<span class="sd">        :param splitvar: variable used to split the sample in folds.</span>
+<span class="sd">        :type splitvar: str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">MVAmgr</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">nfolds</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="s1">&#39;ERROR: Number of folds must be greater than one&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">nfolds</span>   <span class="o">=</span> <span class="n">nfolds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splitvar</span> <span class="o">=</span> <span class="n">splitvar</span>
+
+        <span class="nb">print</span> <span class="s1">&#39;-- Prepare </span><span class="si">{}</span><span class="s1"> folds using variable &#39;</span>\
+            <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nfolds</span><span class="p">,</span> <span class="n">splitvar</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_false_cond</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">smp</span><span class="p">,</span> <span class="n">i</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Condition to be satisfied by the training sample</span>
+<span class="sd">        (necessary to search for overtraining).</span>
+
+<span class="sd">        :param smp: input sample.</span>
+<span class="sd">        :type smp: pandas.DataFrame</span>
+<span class="sd">        :param i: fold index.</span>
+<span class="sd">        :type i: int</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">smp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">splitvar</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfolds</span> <span class="o">!=</span> <span class="n">i</span>
+
+    <span class="k">def</span> <span class="nf">_true_cond</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">smp</span><span class="p">,</span> <span class="n">i</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Usual apply condition for the sample &quot;smp&quot; with fold</span>
+<span class="sd">        index &quot;i&quot;.</span>
+
+<span class="sd">        :param smp: input sample.</span>
+<span class="sd">        :type smp: pandas.DataFrame</span>
+<span class="sd">        :param i: fold index.</span>
+<span class="sd">        :type i: int</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">smp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">splitvar</span><span class="p">]</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">nfolds</span> <span class="o">==</span> <span class="n">i</span>
+
+<div class="viewcode-block" id="KFoldMVAmgr.apply"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">decname</span> <span class="o">=</span> <span class="s1">&#39;mva_dec&#39;</span><span class="p">,</span> <span class="n">predname</span> <span class="o">=</span> <span class="s1">&#39;mva_pred&#39;</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the values for the train and test samples. Apply</span>
+<span class="sd">        to the full samples, and then split (save computational</span>
+<span class="sd">        time).</span>
+
+<span class="sd">        See :meth:`MVAmgr.apply`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">decs</span>  <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">preds</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="n">smp</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extravars</span><span class="p">()]</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mva</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mvas</span><span class="p">):</span>
+            
+            <span class="n">s</span> <span class="o">=</span> <span class="n">smp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_true_cond</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span> <span class="n">i</span><span class="p">)][</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+            
+            <span class="n">d</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process</span><span class="p">(</span><span class="n">mva</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+      
+            <span class="n">decs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>      
+            <span class="n">preds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+      
+        <span class="n">sample</span><span class="p">[</span><span class="n">decname</span><span class="p">]</span>  <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">decs</span><span class="p">)</span>
+        <span class="n">sample</span><span class="p">[</span><span class="n">predname</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KFoldMVAmgr.apply_for_overtraining"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.apply_for_overtraining">[docs]</a>    <span class="k">def</span> <span class="nf">apply_for_overtraining</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">decname</span> <span class="o">=</span> <span class="s1">&#39;mva_dec&#39;</span><span class="p">,</span> <span class="n">predname</span> <span class="o">=</span> <span class="s1">&#39;mva_pred&#39;</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        In this case, the mean of the values of the BDT is taken.</span>
+
+<span class="sd">        See :meth:`MVAmgr.apply_for_overtraining`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="k">if</span> <span class="n">dt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="s1">&#39;ERROR: Unknown data type &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+      
+        <span class="k">if</span> <span class="n">dt</span> <span class="o">==</span> <span class="s1">&#39;test&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">decname</span><span class="p">,</span> <span class="n">predname</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dec_df</span>  <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="n">pred_df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+            <span class="nb">print</span> <span class="s1">&#39;-- Processing a training sample, this may &#39;</span>\
+                <span class="s1">&#39;take a while&#39;</span>
+
+            <span class="n">smp</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extravars</span><span class="p">()]</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mva</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mvas</span><span class="p">):</span>
+
+                <span class="nb">print</span> <span class="s1">&#39;---- Processing MVA number </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                
+                <span class="n">s</span> <span class="o">=</span> <span class="n">smp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_false_cond</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span> <span class="n">i</span><span class="p">)][</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+                
+                <span class="n">d</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process</span><span class="p">(</span><span class="n">mva</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+                
+                <span class="c1"># In the cells corresponding to the test values,</span>
+                <span class="c1"># it is being filled with NaN. By default the</span>
+                <span class="c1"># mean is calculated skipping these numbers.</span>
+                <span class="n">dec_df</span>  <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">dec_df</span><span class="p">,</span> <span class="n">d</span><span class="p">],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="n">pred_df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">pred_df</span><span class="p">,</span> <span class="n">p</span><span class="p">],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+                
+            <span class="nb">print</span> <span class="s1">&#39;---- Calculating mean of BDT values&#39;</span>
+            
+            <span class="n">dm</span> <span class="o">=</span> <span class="n">dec_df</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pm</span> <span class="o">=</span> <span class="n">pred_df</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            
+            <span class="c1"># Study the deviation of the MVA values</span>
+            <span class="n">maximum</span> <span class="o">=</span> <span class="n">dec_df</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">dm</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
+                <span class="n">dm</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            
+            <span class="n">nmax</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">maximum</span><span class="p">[</span><span class="n">maximum</span> <span class="o">&gt;</span> 
+                               <span class="n">KFoldMVAmgr</span><span class="o">.</span><span class="n">__min_tolerance__</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">nmax</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;WARNING: Found </span><span class="si">{}</span><span class="s1"> points (out of </span><span class="si">{}</span><span class="s1">) with &#39;</span>\
+                    <span class="s1">&#39;a deviation on the MVA value greater than </span><span class="si">{}</span><span class="s1"> &#39;</span>\
+                    <span class="s1">&#39;%&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nmax</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">),</span>
+                               <span class="n">KFoldMVAmgr</span><span class="o">.</span><span class="n">__min_tolerance__</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span>
+
+            <span class="n">sample</span><span class="p">[</span><span class="n">decname</span><span class="p">]</span>  <span class="o">=</span> <span class="n">dm</span>
+            <span class="n">sample</span><span class="p">[</span><span class="n">predname</span><span class="p">]</span> <span class="o">=</span> <span class="n">pm</span></div>
+            
+<div class="viewcode-block" id="KFoldMVAmgr.extravars"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.extravars">[docs]</a>    <span class="k">def</span> <span class="nf">extravars</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        See :meth:`MVAmgr.extravars`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">splitvar</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="KFoldMVAmgr.fit"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">bkg</span><span class="p">,</span> <span class="n">issig</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        See :meth:`MVAmgr.fit`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">train_dlst</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">test_dlst</span>  <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="n">mvas</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nfolds</span><span class="p">):</span>
+      
+            <span class="nb">print</span> <span class="s1">&#39;--- Processing fold number </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            
+            <span class="nb">print</span> <span class="s1">&#39;---- Split signal sample&#39;</span>
+            <span class="n">train_sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_sample</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                
+            <span class="nb">print</span> <span class="s1">&#39;---- Split background sample&#39;</span>
+            <span class="n">train_bkg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_sample</span><span class="p">(</span><span class="n">bkg</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            
+            <span class="nb">print</span> <span class="s1">&#39;---- Merge training samples&#39;</span>
+            <span class="n">train_data</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">train_sig</span><span class="p">,</span> <span class="n">train_bkg</span><span class="p">],</span>
+                                       <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            
+            <span class="c1"># The MVA must be a new instance of the classifier type</span>
+            <span class="n">mva</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">issig</span><span class="p">))</span>
+            
+            <span class="n">mvas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mva</span><span class="p">)</span>
+            
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">sig</span><span class="p">,</span> <span class="n">bkg</span><span class="p">],</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">test_data</span>  <span class="o">=</span> <span class="n">train_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">mvas</span> <span class="o">=</span> <span class="n">mvas</span>
+        
+        <span class="k">return</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">test_data</span></div>
+
+<div class="viewcode-block" id="KFoldMVAmgr.test_sample"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.test_sample">[docs]</a>    <span class="k">def</span> <span class="nf">test_sample</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">smp</span><span class="p">,</span> <span class="n">i</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        :param smp: input sample.</span>
+<span class="sd">        :type smp: pandas.DataFrame</span>
+<span class="sd">        :param i: fold number.</span>
+<span class="sd">        :type i: int</span>
+<span class="sd">        :returns: subsample satisfying the testing condition.</span>
+<span class="sd">        :rtype: pandas.DataFrame</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">smp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_true_cond</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="KFoldMVAmgr.train_sample"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmgr.train_sample">[docs]</a>    <span class="k">def</span> <span class="nf">train_sample</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">smp</span><span class="p">,</span> <span class="n">i</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        :param smp: input sample.</span>
+<span class="sd">        :type smp: pandas.DataFrame</span>
+<span class="sd">        :param i: fold number.</span>
+<span class="sd">        :type i: int</span>
+<span class="sd">        :returns: subsample satisfying the training  condition.</span>
+<span class="sd">        :rtype: pandas.DataFrame</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">smp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_false_cond</span><span class="p">(</span><span class="n">smp</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span></div></div>
+
+
+<div class="viewcode-block" id="StdMVAmgr"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.StdMVAmgr">[docs]</a><span class="k">class</span> <span class="nc">StdMVAmgr</span><span class="p">(</span><span class="n">MVAmgr</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Manager that uses the standard procedure of splitting the</span>
+<span class="sd">    samples given the training and testing fractions.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="StdMVAmgr.__init__"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.StdMVAmgr.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">sigtrainfrac</span><span class="p">,</span> <span class="n">bkgtrainfrac</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        See :meth:`MVAmgr.__init__`.</span>
+
+<span class="sd">        :param sigtrainfrac: fraction of signal events used for training.</span>
+<span class="sd">        :type sigtrainfrac: float</span>
+<span class="sd">        :param bkgtrainfrac: fraction of background events used for training.</span>
+<span class="sd">        :type bkgtrainfrac: float</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">MVAmgr</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">features</span> <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigtrainfrac</span> <span class="o">=</span> <span class="n">sigtrainfrac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkgtrainfrac</span> <span class="o">=</span> <span class="n">bkgtrainfrac</span></div>
+
+<div class="viewcode-block" id="StdMVAmgr.apply"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.StdMVAmgr.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">decname</span> <span class="o">=</span> <span class="s1">&#39;mva_dec&#39;</span><span class="p">,</span> <span class="n">predname</span> <span class="o">=</span> <span class="s1">&#39;mva_pred&#39;</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the MVA method values for the given sample.</span>
+<span class="sd">        </span>
+<span class="sd">        See :meth:`MVAmgr.apply`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">smp</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+      
+        <span class="n">dec</span><span class="p">,</span> <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mva</span><span class="p">,</span> <span class="n">smp</span><span class="p">)</span>
+      
+        <span class="n">sample</span><span class="p">[</span><span class="n">decname</span><span class="p">]</span>  <span class="o">=</span> <span class="n">dec</span>  
+        <span class="n">sample</span><span class="p">[</span><span class="n">predname</span><span class="p">]</span> <span class="o">=</span> <span class="n">pred</span></div>
+
+<div class="viewcode-block" id="StdMVAmgr.fit"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.StdMVAmgr.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="n">bkg</span><span class="p">,</span> <span class="n">issig</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        See :meth:`MVAmgr.fit`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">print</span> <span class="s1">&#39;---- Divide data in train and test samples&#39;</span>
+
+        <span class="nb">print</span> <span class="s1">&#39;---- Signal train fraction: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigtrainfrac</span><span class="p">)</span>
+        <span class="n">train_sig</span><span class="p">,</span> <span class="n">test_sig</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">random_state</span> <span class="o">=</span> <span class="mi">11</span><span class="p">,</span> <span class="n">train_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigtrainfrac</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s1">&#39;---- Background train fraction: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bkgtrainfrac</span><span class="p">)</span>
+        <span class="n">train_bkg</span><span class="p">,</span> <span class="n">test_bkg</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">bkg</span><span class="p">,</span> <span class="n">random_state</span> <span class="o">=</span> <span class="mi">11</span><span class="p">,</span> <span class="n">train_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkgtrainfrac</span><span class="p">)</span>
+      
+        <span class="nb">print</span> <span class="s1">&#39;---- Merging training and test samples&#39;</span>
+        <span class="n">train_data</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">train_sig</span><span class="p">,</span> <span class="n">train_bkg</span><span class="p">],</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">test_data</span>  <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">test_sig</span><span class="p">,</span> <span class="n">test_bkg</span><span class="p">],</span> <span class="n">ignore_index</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">mva</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">issig</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">test_data</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">MVAmethod</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Base class to define the method to be used for the MVA analysis.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">const</span><span class="p">,</span> <span class="n">cfg</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        :param const: MVA constructor from the configuration.</span>
+<span class="sd">        :type const: scikit-learn MVA constructor</span>
+<span class="sd">        :param cfg: configuration.</span>
+<span class="sd">        :type cfg: dict</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cfg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">const</span>  <span class="o">=</span> <span class="n">const</span>
+        
+    <span class="k">def</span> <span class="nf">build_mgr</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">features</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Build a manager with the given MVA classifier.</span>
+<span class="sd">        </span>
+<span class="sd">        :param classifier: MVA classifier.</span>
+<span class="sd">        :type classifier: scikit-learn classifier</span>
+<span class="sd">        :param features: features of the classifier.</span>
+<span class="sd">        :type features: list</span>
+<span class="sd">        :returns: MVA built object.</span>
+<span class="sd">        :rtype: MVA classifier.</span>
+<span class="sd">        &#39;&#39;&#39;</span>  
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">const</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="KFoldMVAmethod"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmethod">[docs]</a><span class="k">class</span> <span class="nc">KFoldMVAmethod</span><span class="p">(</span><span class="n">MVAmethod</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Define the k-folding method.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="KFoldMVAmethod.__init__"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.KFoldMVAmethod.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">nfolds</span><span class="p">,</span> <span class="n">splitvar</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Number of folds and the variable to do the splitting must</span>
+<span class="sd">        be provided.</span>
+
+<span class="sd">        :param nfolds: number of folds to use.</span>
+<span class="sd">        :type nfolds: int</span>
+<span class="sd">        :param splitvar: variable to split in folds.</span>
+<span class="sd">        :type spitvar: str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;nfolds&#39;</span><span class="p">:</span> <span class="n">nfolds</span><span class="p">,</span> <span class="s1">&#39;splitvar&#39;</span><span class="p">:</span> <span class="n">splitvar</span><span class="p">}</span>
+        
+        <span class="n">MVAmethod</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">KFoldMVAmgr</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="StdMVAmethod"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.StdMVAmethod">[docs]</a><span class="k">class</span> <span class="nc">StdMVAmethod</span><span class="p">(</span><span class="n">MVAmethod</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Define the standard method.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="StdMVAmethod.__init__"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.StdMVAmethod.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sigtrainfrac</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">bkgtrainfrac</span> <span class="o">=</span> <span class="mf">0.7</span> <span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        The training fractions for signal and background must</span>
+<span class="sd">        be provided.</span>
+
+<span class="sd">        :param sigtrainfrac: fraction of signal events used for \</span>
+<span class="sd">        training.</span>
+<span class="sd">        :type sigtrainfrac: float</span>
+<span class="sd">        :param sigtrainfrac: fraction of background events used \</span>
+<span class="sd">        for training.</span>
+<span class="sd">        :type bkgtrainfrac: float</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;sigtrainfrac&#39;</span><span class="p">:</span> <span class="n">bkgtrainfrac</span><span class="p">,</span>
+            <span class="s1">&#39;bkgtrainfrac&#39;</span><span class="p">:</span> <span class="n">bkgtrainfrac</span>
+            <span class="p">}</span>
+        
+        <span class="n">MVAmethod</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">StdMVAmgr</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="mva_study"><a class="viewcode-back" href="../../utils.html#mvacfg.utils.mva_study">[docs]</a><span class="k">def</span> <span class="nf">mva_study</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">signame</span><span class="p">,</span> <span class="n">sigsmp</span><span class="p">,</span> <span class="n">bkgname</span><span class="p">,</span> <span class="n">bkgsmp</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">mvatype</span><span class="p">,</span>
+               <span class="n">mvaconfig</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">outdir</span>     <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span>
+               <span class="n">methconfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">is_sig</span>     <span class="o">=</span> <span class="s1">&#39;is_sig&#39;</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Main function to perform a MVA study. The results are stored</span>
+<span class="sd">    in three different files: one storing the histograms and the</span>
+<span class="sd">    ROC curve, another with the configuration used to run this</span>
+<span class="sd">    function, and the last stores the proper class to store the</span>
+<span class="sd">    MVA algorithm.</span>
+
+<span class="sd">    :param name: name of the study.</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param signame: signal sample name.</span>
+<span class="sd">    :type signame: str</span>
+<span class="sd">    :param sigsmp: signal sample.</span>
+<span class="sd">    :type sigsmp: pandas.DataFrame</span>
+<span class="sd">    :param bkgname: background sample name.</span>
+<span class="sd">    :type bkgname: str</span>
+<span class="sd">    :param bkgsmp: background sample.</span>
+<span class="sd">    :type bkgsmp: pandas.DataFrame</span>
+<span class="sd">    :param features: list of variables to use.</span>
+<span class="sd">    :type features: list of str or None</span>
+<span class="sd">    :param mvatype: type of MVA to execute.</span>
+<span class="sd">    :type mvatype: MVA classifier</span>
+<span class="sd">    :param mvaconfig: configuration of the MVA.</span>
+<span class="sd">    :type mvaconfig: dict</span>
+<span class="sd">    :param outdir: output directory.</span>
+<span class="sd">    :type outdir: str</span>
+<span class="sd">    :param methconfig: configuration of the MVA method.</span>
+<span class="sd">    :type methconfig: dict</span>
+<span class="sd">    :param is_sig: name for the additional column holding the \</span>
+<span class="sd">    signal condition.</span>
+<span class="sd">    :type is_sig: str</span>
+<span class="sd">    :returns: MVA manager, training and testing samples.</span>
+<span class="sd">    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">methconfig</span> <span class="o">=</span> <span class="n">methconfig</span> <span class="k">if</span> <span class="n">methconfig</span> <span class="k">else</span> <span class="n">MVAmethod</span><span class="p">(</span><span class="s1">&#39;std&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Create the output directory</span>
+    <span class="n">mva_dir</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/mva_configs_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">_makedirs</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">)</span>
+    
+    <span class="c1"># Get the available configuration ID</span>
+    <span class="n">flst</span>    <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">_get_configurations</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">,</span> <span class="s1">&#39;mva_config&#39;</span><span class="p">)</span>
+    <span class="n">conf_id</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">_available_configuration</span><span class="p">(</span><span class="n">flst</span><span class="p">)</span>
+    
+    <span class="c1"># Get the raw configuration from the inputs</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;signame&#39;</span>     <span class="p">:</span> <span class="n">signame</span><span class="p">,</span>
+            <span class="s1">&#39;bkgname&#39;</span>     <span class="p">:</span> <span class="n">bkgname</span><span class="p">,</span>
+            <span class="s1">&#39;features&#39;</span>    <span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">features</span><span class="p">)),</span>
+            <span class="s1">&#39;classifier&#39;</span>  <span class="p">:</span> <span class="n">mvatype</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="s1">&#39;outdir&#39;</span>      <span class="p">:</span> <span class="n">outdir</span><span class="p">,</span>
+            <span class="s1">&#39;studymeth&#39;</span>   <span class="p">:</span> <span class="n">methconfig</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="p">}</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">mvaconfig</span><span class="p">,</span> <span class="n">methconfig</span><span class="o">.</span><span class="n">config</span><span class="p">):</span>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        
+    <span class="c1"># All items are converted to strings</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    
+    <span class="c1"># Check if any other file is storing the same configuration</span>
+    <span class="n">matches</span>  <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">check_configurations</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">flst</span><span class="p">)</span>
+    <span class="n">conf_id</span>  <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">_manage_config_matches</span><span class="p">(</span><span class="n">matches</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
+    <span class="n">cfg_path</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/mva_config_</span><span class="si">{}</span><span class="s1">.ini&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
+    
+    <span class="c1"># Save the configuration ID</span>
+    <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;confid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conf_id</span>
+    
+    <span class="c1"># Path to the file storing the MVA function</span>
+    <span class="n">func_path</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/mva_func_</span><span class="si">{}</span><span class="s1">.pkl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
+    <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;funcfile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">func_path</span>
+    
+    <span class="c1"># Display the configuration to run</span>
+    <span class="nb">print</span> <span class="s1">&#39;*************************&#39;</span>
+    <span class="nb">print</span> <span class="s1">&#39;*** MVA configuration ***&#39;</span>
+    <span class="nb">print</span> <span class="s1">&#39;*************************&#39;</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">print_configuration</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s1">&#39;*************************&#39;</span>
+    
+    <span class="c1"># Generating the INI file must be the last thing to do</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">genconfig</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">)</span>
+    
+    <span class="c1"># Define the manager</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">methconfig</span><span class="o">.</span><span class="n">build_mgr</span><span class="p">(</span><span class="n">mvatype</span><span class="p">(</span><span class="o">**</span><span class="n">mvaconfig</span><span class="p">),</span> <span class="n">features</span><span class="p">)</span>
+    
+    <span class="c1"># Add the signal flag</span>
+    <span class="nb">print</span> <span class="s1">&#39;-- Adding the signal flag&#39;</span>
+
+    <span class="n">sigsmp</span> <span class="o">=</span> <span class="n">sigsmp</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">sigsmp</span><span class="p">[</span><span class="n">is_sig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">bkgsmp</span> <span class="o">=</span> <span class="n">bkgsmp</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">bkgsmp</span><span class="p">[</span><span class="n">is_sig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    
+    <span class="c1"># Train the MVA method</span>
+    <span class="nb">print</span> <span class="s1">&#39;-- Initialize training&#39;</span>
+    <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">sigsmp</span><span class="p">,</span> <span class="n">bkgsmp</span><span class="p">,</span> <span class="n">is_sig</span><span class="p">)</span>
+    
+    <span class="c1"># Save the output method(s)</span>
+    <span class="n">mgr</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">func_path</span><span class="p">)</span>
+    
+    <span class="c1"># Apply the MVA method</span>
+    <span class="nb">print</span> <span class="s1">&#39;-- Apply the trained MVA algorithm&#39;</span>
+    <span class="k">for</span> <span class="n">tp</span><span class="p">,</span> <span class="n">smp</span> <span class="ow">in</span> <span class="p">((</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">train</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">test</span><span class="p">)):</span>
+        <span class="n">mgr</span><span class="o">.</span><span class="n">apply_for_overtraining</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span> <span class="n">smp</span><span class="p">)</span>
+        
+    <span class="nb">print</span> <span class="s1">&#39;-- Process finished!&#39;</span>
+    
+    <span class="k">return</span> <span class="n">mgr</span><span class="p">,</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">mvacfg</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plot.html">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">utils</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Miguel Ramos Pernas.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,165 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mvacfg.plot &#8212; mvacfg 0.0.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mvacfg.plot</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Classes and function to plot MVA results using matplotlib.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Miguel Ramos Pernas&#39;</span>
+<span class="n">__email__</span>  <span class="o">=</span> <span class="s1">&#39;miguel.ramos.pernas@cern.ch&#39;</span>
+
+
+<span class="c1"># Python</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+
+<span class="c1"># Scikit learn</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">roc_curve</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ks_test&#39;</span><span class="p">,</span> <span class="s1">&#39;ROC&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="ks_test"><a class="viewcode-back" href="../../plot.html#mvacfg.plot.ks_test">[docs]</a><span class="k">def</span> <span class="nf">ks_test</span><span class="p">(</span> <span class="n">mva_dec_A</span><span class="p">,</span> <span class="n">mva_dec_B</span><span class="p">,</span> <span class="n">maxpv</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    :param mva_dec_A: MVA output for sample A.</span>
+<span class="sd">    :type mva_dec_A: array-like</span>
+<span class="sd">    :param mva_dec_B: MVA output for sample B.</span>
+<span class="sd">    :type mva_dec_B: array-like</span>
+<span class="sd">    :param maxpv: maximum value of the p-value of the KS \</span>
+<span class="sd">    test to get a warning.</span>
+<span class="sd">    :type maxpv: float</span>
+<span class="sd">    :returns: KS test statistics and p-value</span>
+<span class="sd">    :rtype: tuple(float, float)</span>
+
+<span class="sd">    .. seealso:: :func:`scipy.stats.ks_2samp`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ks_stat</span><span class="p">,</span> <span class="n">pvalue</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">ks_2samp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">mva_dec_A</span><span class="p">),</span>
+                                  <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">mva_dec_B</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">pvalue</span> <span class="o">&gt;</span> <span class="n">maxpv</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="s1">&#39;WARNING: Kolmogorov-Smirnov test rejects the &#39;</span>\
+            <span class="s1">&#39;null hypothesis (p-value = </span><span class="si">{:.4f}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pvalue</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ks_stat</span><span class="p">,</span> <span class="n">pvalue</span></div>
+
+
+<div class="viewcode-block" id="ROC"><a class="viewcode-back" href="../../plot.html#mvacfg.plot.ROC">[docs]</a><span class="k">def</span> <span class="nf">ROC</span><span class="p">(</span> <span class="n">sig_sta</span><span class="p">,</span> <span class="n">mva_dec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;  </span>
+<span class="sd">    Calculate ROC curve giving the signal status  and the MVA method decision.</span>
+
+<span class="sd">    :param sig_sta: array with the signal status of &quot;mva_dec&quot;. (True \</span>
+<span class="sd">    for signal and False for background)</span>
+<span class="sd">    :type sig_sta: array-like</span>
+<span class="sd">    :param mva_dec: array with the MVA response.</span>
+<span class="sd">    :type mva_dec: array-like</span>
+<span class="sd">    :param kwargs: extra arguments to sklearn.metrics.roc_curve.</span>
+<span class="sd">    :type kwargs: dict</span>
+<span class="sd">    :returns: background rejection and signal efficiency.</span>
+<span class="sd">    :rtype: tuple(array-like, array-like)</span>
+<span class="sd">    </span>
+<span class="sd">    .. seealso:: :func:`sklearn.metrics.roc_curve`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">bkg_eff</span><span class="p">,</span> <span class="n">sig_eff</span><span class="p">,</span> <span class="n">thresholds</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">sig_sta</span><span class="p">,</span> <span class="n">mva_dec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">bkg_rej</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">bkg_eff</span>
+    
+    <span class="k">return</span> <span class="n">bkg_rej</span><span class="p">,</span> <span class="n">sig_eff</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">mvacfg</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plot.html">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">utils</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Miguel Ramos Pernas.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

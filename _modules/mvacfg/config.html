@@ -1,0 +1,327 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mvacfg.config &#8212; mvacfg 0.0.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mvacfg.config</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Module to manage MVA configurations.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Miguel Ramos Pernas&#39;</span>
+<span class="n">__email__</span>  <span class="o">=</span> <span class="s1">&#39;miguel.ramos.pernas@cern.ch&#39;</span>
+
+
+<span class="c1"># Python</span>
+<span class="kn">import</span> <span class="nn">configparser</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span> <span class="k">as</span> <span class="n">odict</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;check_configurations&#39;</span><span class="p">,</span> <span class="s1">&#39;genconfig&#39;</span><span class="p">,</span> <span class="s1">&#39;print_configuration&#39;</span><span class="p">,</span> <span class="s1">&#39;readconfig&#39;</span><span class="p">,</span> <span class="s1">&#39;save_config&#39;</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_available_configuration</span><span class="p">(</span> <span class="n">flst</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return the next available configuration index.</span>
+
+<span class="sd">    :param flst: list of configuration files.</span>
+<span class="sd">    :type flst: list of str</span>
+<span class="sd">    :returns: amount of configuration files.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">numbers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flst</span><span class="p">))</span>
+    
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">numbers</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">i</span>
+    
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="check_configurations"><a class="viewcode-back" href="../../config.html#mvacfg.config.check_configurations">[docs]</a><span class="k">def</span> <span class="nf">check_configurations</span><span class="p">(</span> <span class="n">config</span><span class="p">,</span> <span class="n">flst</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Check in the given path if any other files exist with the</span>
+<span class="sd">    same configuration.</span>
+
+<span class="sd">    :param config: configuration to check.</span>
+<span class="sd">    :type config: dict</span>
+<span class="sd">    :param flst: list of configuration files.</span>
+<span class="sd">    :type flst: list of str</span>
+<span class="sd">    :returns: list of configurations matching the input.</span>
+<span class="sd">    :rtype: list of str</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flst</span><span class="p">:</span>
+        
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">cfg</span> <span class="o">==</span> <span class="n">config</span><span class="p">:</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+            
+    <span class="k">return</span> <span class="n">matches</span></div>
+
+
+<div class="viewcode-block" id="genconfig"><a class="viewcode-back" href="../../config.html#mvacfg.config.genconfig">[docs]</a><span class="k">def</span> <span class="nf">genconfig</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">dic</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Generate a xml file containing the configuration stored</span>
+<span class="sd">    in the given dictionary.</span>
+<span class="sd">    </span>
+<span class="sd">    :param name: name of the configuration.</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param dic: dictionary with the configuration.</span>
+<span class="sd">    :type dic: dict</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+
+    <span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="s1">&#39;cfgname&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">_proc_config_element</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">config</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_configurations</span><span class="p">(</span> <span class="n">path</span><span class="p">,</span> <span class="n">name_pattern</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Get the list of current configurations in &quot;path&quot;.</span>
+<span class="sd">    </span>
+<span class="sd">    :param path: path to get the configurations from.</span>
+<span class="sd">    :type path: str</span>
+<span class="sd">    :param name_pattern: regex to filter the configurations.</span>
+<span class="sd">    :type name_pattern: str</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">comp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">name_pattern</span><span class="p">)</span>
+    
+    <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">comp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span>
+    
+    <span class="n">full_lst</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">string</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">matches</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">full_lst</span>
+
+
+<span class="k">def</span> <span class="nf">_makedirs</span><span class="p">(</span> <span class="n">path</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Check if the path exists and makes the directory if not.</span>
+<span class="sd">    </span>
+<span class="sd">    :param path: input path.</span>
+<span class="sd">    :type path: str</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s1">&#39;INFO: Creating output directory &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_manage_config_matches</span><span class="p">(</span> <span class="n">matches</span><span class="p">,</span> <span class="n">conf_id</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Manage those configurations wich matched one given,</span>
+<span class="sd">    asking to overwrite the files or create a new one</span>
+<span class="sd">    with the given configuration ID.</span>
+
+<span class="sd">    :param matches: list of files matching the configuration.</span>
+<span class="sd">    :type matches: list of str</span>
+<span class="sd">    :param conf_id: proposed configuration ID.</span>
+<span class="sd">    :type conf_id: str</span>
+<span class="sd">    :returns: configuration ID.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
+
+        <span class="nb">print</span> <span class="s1">&#39;WARNING: Found </span><span class="si">{}</span><span class="s1"> file(s) with the same configuration&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+        
+        <span class="n">expath</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    
+        <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">while</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;WARNING: Overwrite existing configuration file &#39;</span>\
+                              <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;? (Y/[n]): &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expath</span><span class="p">)</span>
+                          <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;n&#39;</span>
+
+        <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+            <span class="n">cfg_path</span> <span class="o">=</span> <span class="n">expath</span>
+            <span class="n">conf_id</span>  <span class="o">=</span> <span class="n">readconfig</span><span class="p">(</span><span class="n">expath</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;confid&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">while</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">):</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;WARNING: Do you want to create a new configuration file? (Y/[n]): &#39;</span><span class="p">)</span>
+                    
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="p">:</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;n&#39;</span>
+            
+            <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span><span class="p">:</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">conf_id</span>
+
+
+<div class="viewcode-block" id="print_configuration"><a class="viewcode-back" href="../../config.html#mvacfg.config.print_configuration">[docs]</a><span class="k">def</span> <span class="nf">print_configuration</span><span class="p">(</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">indent</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Display the given configuration.</span>
+
+<span class="sd">    :param cfg: configuration.</span>
+<span class="sd">    :rtype cfg: dict</span>
+<span class="sd">    :param indent: indentation for the print function.</span>
+<span class="sd">    :type indent: int</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">maxl</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="n">lsp</span> <span class="o">=</span> <span class="n">maxl</span> <span class="o">+</span> <span class="n">indent</span>
+    
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;{:&gt;</span><span class="si">{}</span><span class="s1">}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;{:&lt;</span><span class="si">{}</span><span class="s1">}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">maxl</span><span class="p">),</span> <span class="n">lsp</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> = (&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">print_configuration</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">indent</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;{:&gt;</span><span class="si">{}</span><span class="s1">}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">,</span> <span class="n">maxl</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_proc_config_element</span><span class="p">(</span> <span class="n">config</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">element</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Process the given element storing a configuration value</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s1">&#39;__dict__&#39;</span><span class="p">):</span>
+        
+        <span class="n">config</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        
+        <span class="n">d</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="vm">__dict__</span>
+        
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()):</span>
+            <span class="n">_proc_config_element</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="readconfig"><a class="viewcode-back" href="../../config.html#mvacfg.config.readconfig">[docs]</a><span class="k">def</span> <span class="nf">readconfig</span><span class="p">(</span> <span class="n">path</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Read a xml file storing a configuration and return the</span>
+<span class="sd">    name of the root and a dictionary with the configuration.</span>
+
+<span class="sd">    :param path: path to the input file.</span>
+<span class="sd">    :type path: str</span>
+<span class="sd">    :returns: tuple with the tag and configuration of the \</span>
+<span class="sd">    input file.</span>
+<span class="sd">    :rtype: tuple(str, dict)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">configparser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">c</span></div>
+
+<div class="viewcode-block" id="save_config"><a class="viewcode-back" href="../../config.html#mvacfg.config.save_config">[docs]</a><span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">path</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    :param cfg: configuration.</span>
+<span class="sd">    :type cfg: ConfigParser</span>
+<span class="sd">    :param path: path to save the output file.</span>
+<span class="sd">    :type path: str</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="nb">print</span> <span class="s1">&#39;INFO: Generate new configuration file &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">mvacfg</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../plot.html">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">utils</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Miguel Ramos Pernas.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

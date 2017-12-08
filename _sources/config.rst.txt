@@ -1,5 +1,9 @@
 config
 ======
 
-Module to read and write MVA configurations. It is built around the
-:mod:`configparser` module.
+.. automodule:: mvacfg.config
+   :members:
+   :undoc-members:
+   :special-members:
+   :inherited-members:
+   :show-inheritance:

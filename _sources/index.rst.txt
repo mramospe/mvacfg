@@ -3,13 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to mvacfg's documentation!
-==================================
+.. include:: ../../README.rst
+
+Modules
+=======
+
+Here you can find the documentation on the interal
+modules of the mvacfg package.
 
 .. toctree::
    :maxdepth: 2
    
-   introduction
    config
    plot
    utils
