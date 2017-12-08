@@ -9,7 +9,15 @@ Welcome to mvacfg's documentation!
 .. toctree::
    :maxdepth: 2
    
-   includeme
+   introduction
+   config
+   plot
+   utils
+
+Examples
+========
+
+.. automodule:: mvacfg.examples
 
 
 Indices and tables
