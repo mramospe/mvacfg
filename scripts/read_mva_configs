@@ -12,7 +12,7 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 from argparse import ArgumentParser
 
 # Local
-import config
+import mvacfg
 
 
 # Build the parser
@@ -27,8 +27,8 @@ args = parser.parse_args()
 # Iterate over the input files to print the configurations
 for f in args.files:
 
-    name, config = config.readxmlconfig(f)
+    cfg = mvacfg.readconfig(f)
 
-    print '-- Configuration in file "{}" (tag: "{}")'.format(f, name)
-
-    config.print_configuration(config)
+    print '-- Configuration in file "{}"'.format(f)
+    
+    mvacfg.print_configuration(cfg)

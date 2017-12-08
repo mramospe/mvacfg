@@ -7,7 +7,7 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
-import configparser, os, inspect, re
+import configparser, os, re
 from collections import OrderedDict as odict
 
 
@@ -182,10 +182,10 @@ def _proc_config_element( config, root, name, element ):
     '''
     Process the given element storing a configuration value
     '''
-    if inspect.isclass(element):
+    if hasattr(element, '__dict__'):
         
         config.add_section(name)
-
+        
         d = element.__dict__
         
         for e, v in sorted(d.iteritems()):

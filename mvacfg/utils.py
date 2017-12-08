@@ -545,11 +545,12 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     print '*************************'
     
     # Generating the INI file must be the last thing to do
-    config.genconfig(name, cfg, cfg_path)
+    cfg = config.genconfig(name, cfg)
+    config.save_config(cfg, cfg_path)
     
     # Define the manager
     mgr = methconfig.build_mgr(mvatype(**mvaconfig), features)
-
+    
     # Add the signal flag
     print '-- Adding the signal flag'
 

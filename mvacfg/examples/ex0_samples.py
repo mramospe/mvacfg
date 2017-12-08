@@ -9,8 +9,9 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
+import matplotlib.pyplot as plt
 import numpy as np
-import pandas
+import joblib, os, pandas
 
 # Scikit-learn
 from sklearn.ensemble import AdaBoostClassifier
@@ -93,11 +94,11 @@ def main():
         s.apply(smp, '{}_dec'.format(name), '{}_pred'.format(name))
 
     common = {'histtype': 'step', 'weights': np.ones(n)/float(n), 'lw': 2}
-
+    '''
     plt.hist(smp['std_pred'], color = 'b', ls = 'solid', **common)
     plt.hist(smp['kfold_pred'], color = 'r', ls = 'dashed', **common)
     plt.show()
-
+    '''
 
 if __name__ == '__main__':
     main()
