@@ -530,7 +530,6 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     cfg = {
         'signame'    : signame,
         'bkgname'    : bkgname,
-        'features'   : str(list(features)),
         'manager'    : mgr,
         'outdir'     : outdir
     }

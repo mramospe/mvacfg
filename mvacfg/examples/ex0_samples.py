@@ -20,7 +20,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 # mvacfg
 import mvacfg
-from mvacfg.utils import __is_sig__, __mva_dec__
+from mvacfg.core import __is_sig__, __mva_dec__
 
 
 def main():
