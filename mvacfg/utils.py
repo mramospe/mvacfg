@@ -23,6 +23,10 @@ __all__ = ['KFoldMVAmgr', 'StdMVAmgr',
            'KFoldMVAmethod', 'StdMVAmethod',
            'mva_study']
 
+# Global names for the MVA outputs
+__mva_dec__  = 'mva_dec'
+__mva_pred__ = 'mva_pred'
+
 
 class MVAmgr:
     '''
@@ -87,7 +91,7 @@ class MVAmgr:
         '''
         raise NotImplementedError('Attempt to call abstract method')
 
-    def apply_for_overtraining( self, dt, sample, decname = 'mva_dec', predname = 'mva_pred' ):
+    def apply_for_overtraining( self, dt, sample, decname = __mva_dec__, predname = __mva_pred__ ):
         '''
         Redefinition of the "apply" method given the sample type
         (train or test) to search for overtraining effects.
@@ -192,7 +196,7 @@ class KFoldMVAmgr(MVAmgr):
         '''
         return smp[self.splitvar] % self.nfolds == i
 
-    def apply( self, sample, decname = 'mva_dec', predname = 'mva_pred' ):
+    def apply( self, sample, decname = __mva_dec__, predname = __mva_pred__ ):
         '''
         Calculate the values for the train and test samples. Apply
         to the full samples, and then split (save computational
@@ -211,13 +215,13 @@ class KFoldMVAmgr(MVAmgr):
             
             d, p = self._process(mva, s)
       
-            decs.append(d)      
+            decs.append(d)
             preds.append(p)
       
         sample[decname]  = pandas.concat(decs)
         sample[predname] = pandas.concat(preds)
 
-    def apply_for_overtraining( self, dt, sample, decname = 'mva_dec', predname = 'mva_pred' ):
+    def apply_for_overtraining( self, dt, sample, decname = __mva_dec__, predname = __mva_pred__ ):
         '''
         In this case, the mean of the values of the BDT is taken.
 
@@ -357,7 +361,7 @@ class StdMVAmgr(MVAmgr):
         self.sigtrainfrac = sigtrainfrac
         self.bkgtrainfrac = bkgtrainfrac
 
-    def apply( self, sample, decname = 'mva_dec', predname = 'mva_pred' ):
+    def apply( self, sample, decname = __mva_dec__, predname = __mva_pred__ ):
         '''
         Calculate the MVA method values for the given sample.
         
@@ -403,6 +407,13 @@ class MVAmethod:
         '''
         self.config = cfg
         self.const  = const
+
+    def __dict__( self ):
+        '''
+        :returns: configuration of this class.
+        :rtype: dict
+        '''
+        return self.config
         
     def build_mgr( self, classifier, features ):
         '''
@@ -500,7 +511,10 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
     '''
     methconfig = methconfig if methconfig else MVAmethod('std')
-
+    
+    # Define the manager
+    mgr = methconfig.build_mgr(mvatype(**mvaconfig), features)
+    
     # Create the output directory
     mva_dir = '{}/mva_configs_{}'.format(outdir, name)
     config._makedirs(mva_dir)
@@ -511,31 +525,28 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     
     # Get the raw configuration from the inputs
     cfg = {
-            'signame'     : signame,
-            'bkgname'     : bkgname,
-            'features'    : str(list(features)),
-            'classifier'  : mvatype.__name__,
-            'outdir'      : outdir,
-            'studymeth'   : methconfig.__class__.__name__,
-            }
-    for c in (mvaconfig, methconfig.config):
-        cfg.update(c)
-        
-    # All items are converted to strings
-    for k, v in cfg.iteritems():
-        cfg[k] = str(v)
+        'signame'    : signame,
+        'bkgname'    : bkgname,
+        'features'   : str(list(features)),
+        'manager'    : mgr,
+        'outdir'     : outdir
+    }
+    
+    cfg = config.genconfig(name, cfg)
     
     # Check if any other file is storing the same configuration
-    matches  = config.check_configurations(cfg, flst)
+    matches  = config.check_configurations(
+        cfg, flst, {config.__main_config_name__: ['funcfile', 'confid']}
+    )
     conf_id  = config._manage_config_matches(matches, conf_id)
     cfg_path = '{}/mva_config_{}.ini'.format(mva_dir, conf_id)
     
     # Save the configuration ID
-    cfg['confid'] = conf_id
+    cfg.set(config.__main_config_name__, 'confid', str(conf_id))
     
     # Path to the file storing the MVA function
     func_path = '{}/mva_func_{}.pkl'.format(mva_dir, conf_id)
-    cfg['funcfile'] = func_path
+    cfg.set(config.__main_config_name__, 'funcfile', func_path)
     
     # Display the configuration to run
     print '*************************'
@@ -545,11 +556,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     print '*************************'
     
     # Generating the INI file must be the last thing to do
-    cfg = config.genconfig(name, cfg)
     config.save_config(cfg, cfg_path)
-    
-    # Define the manager
-    mgr = methconfig.build_mgr(mvatype(**mvaconfig), features)
     
     # Add the signal flag
     print '-- Adding the signal flag'

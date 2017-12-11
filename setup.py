@@ -28,7 +28,7 @@ setup(
     description = 'Package to track MVA configurations using scikit-learn',
     
     # Read the long description from the README
-    long_description = open('README.md').readlines(),
+    long_description = open('README.rst').readlines(),
     
     # Keywords to search for the package
     keywords = 'mva bdt hep',
@@ -40,7 +40,7 @@ setup(
     scripts = ['scripts/read_mva_configs'],
 
     # Requisites
-    install_requires = ['scikit-learn', 'matplotlib', 'numpy', 'pytest'],
+    install_requires = ['configparser', 'matplotlib', 'numpy', 'pytest', 'scikit-learn'],
 
     # Test requirements
     setup_requires = ['pytest-runner'],

@@ -14,6 +14,10 @@ from collections import OrderedDict as odict
 __all__ = ['check_configurations', 'genconfig', 'print_configuration', 'readconfig', 'save_config']
 
 
+# Name of the section holding the general configuration variables
+__main_config_name__ = 'GENERAL'
+
+
 def _available_configuration( flst ):
     '''
     Return the next available configuration index.
@@ -32,7 +36,7 @@ def _available_configuration( flst ):
     return len(numbers)
 
 
-def check_configurations( config, flst ):
+def check_configurations( config, flst, skip = None ):
     '''
     Check in the given path if any other files exist with the
     same configuration.
@@ -44,14 +48,20 @@ def check_configurations( config, flst ):
     :returns: list of configurations matching the input.
     :rtype: list of str
     '''
+    skip = skip or []
+    
     matches = []
     for f in flst:
         
         cfg = configparser.ConfigParser()
         cfg.read(f)
-        
+
+        for s, l in skip.iteritems():
+            for e in l:
+                cfg.remove_option(s, e)
+                
         if cfg == config:
-            matches.append(cfg)
+            matches.append((f, cfg))
             
     return matches
 
@@ -68,10 +78,11 @@ def genconfig( name, dic ):
     '''
     config = configparser.ConfigParser()
 
-    config.set('DEFAULT', 'cfgname', name)
+    config.add_section(__main_config_name__)
+    config.set(__main_config_name__, 'cfgname', name)
     
-    for e, v in dic.iteritems():
-        _proc_config_element(config, 'DEFAULT', e, v)
+    for e, v in sorted(dic.iteritems()):
+        _proc_config_element(config, __main_config_name__, e, v)
 
     return config
 
@@ -125,8 +136,8 @@ def _manage_config_matches( matches, conf_id ):
 
         print 'WARNING: Found {} file(s) with the same configuration'.format(len(matches))
         
-        expath = matches[-1]
-    
+        expath = matches[-1][0]
+        
         d = ''
         while d not in ('Y', 'n'):
             d = raw_input('WARNING: Overwrite existing configuration file '\
@@ -137,7 +148,7 @@ def _manage_config_matches( matches, conf_id ):
 
         if d == 'Y':
             cfg_path = expath
-            conf_id  = readconfig(expath)[1]['confid']
+            conf_id  = readconfig(expath)[__main_config_name__]['confid']
         else:
             d = ''
             while d not in ('Y', 'n'):
@@ -165,16 +176,16 @@ def print_configuration( cfg, indent = 0 ):
 
     lsp = maxl + indent
     
-    for k, v in sorted(cfg.iteritems()):
-
+    for k, v in cfg.iteritems():
+        
         d = '{:>{}}'.format('{:<{}}'.format(k, maxl), lsp)
         
-        try:
-            dict(v)
-            print '{} = ('.format(d)
-            print_configuration(v, indent + 5)
-            print '{:>{}}'.format(')', maxl)
-        except:
+        if hasattr(v, 'iteritems'):
+            if len(v.keys()) > 0:
+                print '{} = ('.format(d)
+                print_configuration(v, indent + 5)
+                print '{:>{}}'.format(')', indent + 5)
+        else:
             print '{} = {}'.format(d, v)
 
 
@@ -183,12 +194,11 @@ def _proc_config_element( config, root, name, element ):
     Process the given element storing a configuration value
     '''
     if hasattr(element, '__dict__'):
-        
+        config.set(root, name, element.__class__.__name__)
+
         config.add_section(name)
         
-        d = element.__dict__
-        
-        for e, v in sorted(d.iteritems()):
+        for e, v in sorted(vars(element).iteritems()):
             _proc_config_element(config, name, e, v)
     else:
         config.set(root, name, str(element))
