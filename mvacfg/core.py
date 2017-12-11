@@ -8,8 +8,9 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
-import os, joblib, pandas
+import configparser, importlib, inspect, joblib, os, pandas
 import numpy as np
+from collections import OrderedDict as odict
 from copy import deepcopy
 
 # Scikit-learn
@@ -17,10 +18,11 @@ from sklearn.model_selection import train_test_split
 
 # Local
 import mvacfg.config as config
+from mvacfg.config import __manager_name__, __main_config_name__
 
 
-__all__ = ['KFoldMVAmgr', 'StdMVAmgr',
-           'KFoldMVAmethod', 'StdMVAmethod',
+__all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr',
+           'MVAmethod', 'KFoldMVAmethod', 'StdMVAmethod',
            'mva_study']
 
 # Global names for the MVA outputs
@@ -130,6 +132,59 @@ class MVAmgr:
         :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
         '''
         raise NotImplementedError('Attempt to call abstract method')
+
+    @staticmethod
+    def from_config( path ):
+        '''
+        Build an instance of this class from a configuration file.
+
+        :param path: path to the configuration file.
+        :type path: str
+        :returns: manager instance.
+        :rtype: MVA manager
+        '''
+        cfg = configparser.ConfigParser()
+        cfg.read(path)
+
+        # Process the configuration
+        res = odict()
+        for name, section in reversed(cfg.items()):
+
+            sub = odict()
+            
+            for k, v in section.iteritems():
+                try:
+                    sub[k] = eval(v)
+                except:
+                    sub[k] = v
+
+            res[name] = sub
+
+        # Build all the classes
+        its = res.items()
+        for i, (name, dct) in enumerate(its):
+            for n, d in its[:i]:
+                if n in dct:
+
+                    # Access the class constructor
+                    path = dct[n]
+                    
+                    modname = path[:path.rfind('.')]
+                    clsname = path[path.rfind('.') + 1:]
+                    
+                    const  = getattr(importlib.import_module(modname), clsname)
+                    
+                    # Remove the attributes not present in the constructor
+                    args = inspect.getargspec(const.__init__).args
+                    args.remove('self')
+
+                    inputs = {k: v for k, v in d.iteritems() if k in args}
+
+                    # Call the constructor
+                    dct[n] = const(**inputs)
+
+        # Return the manager
+        return res[__main_config_name__][__manager_name__]
 
     def save( self, path ):
         '''
@@ -455,7 +510,7 @@ class StdMVAmethod(MVAmethod):
     '''
     Define the standard method.
     '''
-    def __init__( self, sigtrainfrac = 0.7, bkgtrainfrac = 0.7 ):
+    def __init__( self, sigtrainfrac = 0.75, bkgtrainfrac = 0.75 ):
         '''
         The training fractions for signal and background must
         be provided.
@@ -479,7 +534,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
                mvaconfig  = None,
                outdir     = '.',
                methconfig = None,
-               issig     = __is_sig__ ):
+               issig      = __is_sig__ ):
     '''
     Main function to perform a MVA study. The results are stored
     in three different files: one storing the histograms and the
@@ -513,7 +568,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     :returns: MVA manager, training and testing samples.
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
     '''
-    methconfig = methconfig if methconfig else MVAmethod('std')
+    methconfig = methconfig if methconfig else StdMVAmethod()
     
     # Define the manager
     mgr = methconfig.build_mgr(mvatype(**mvaconfig), features)
@@ -528,10 +583,10 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     
     # Get the raw configuration from the inputs
     cfg = {
-        'signame'    : signame,
-        'bkgname'    : bkgname,
-        'manager'    : mgr,
-        'outdir'     : outdir
+        'signame'        : signame,
+        'bkgname'        : bkgname,
+        __manager_name__ : mgr,
+        'outdir'         : outdir
     }
     
     cfg = config.genconfig(name, cfg)

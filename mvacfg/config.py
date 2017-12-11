@@ -16,6 +16,7 @@ __all__ = ['check_configurations', 'genconfig', 'print_configuration', 'readconf
 
 # Name of the section holding the general configuration variables
 __main_config_name__ = 'GENERAL'
+__manager_name__     = 'manager'
 
 
 def _available_configuration( flst ):
@@ -48,7 +49,7 @@ def check_configurations( config, flst, skip = None ):
     :returns: list of configurations matching the input.
     :rtype: list of str
     '''
-    skip = skip or []
+    skip = skip or {}
     
     matches = []
     for f in flst:
@@ -194,7 +195,13 @@ def _proc_config_element( config, root, name, element ):
     Process the given element storing a configuration value
     '''
     if hasattr(element, '__dict__'):
-        config.set(root, name, element.__class__.__name__)
+
+        cl = element.__class__
+
+        # So later it can be easily loaded
+        full_name = '{}.{}'.format(cl.__module__, cl.__name__)
+
+        config.set(root, name, full_name)
 
         config.add_section(name)
         
