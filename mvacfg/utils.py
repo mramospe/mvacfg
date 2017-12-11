@@ -27,6 +27,9 @@ __all__ = ['KFoldMVAmgr', 'StdMVAmgr',
 __mva_dec__  = 'mva_dec'
 __mva_pred__ = 'mva_pred'
 
+# Global name for the signal flag
+__is_sig__ = 'is_sig'
+
 
 class MVAmgr:
     '''
@@ -476,7 +479,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
                mvaconfig  = None,
                outdir     = '.',
                methconfig = None,
-               is_sig     = 'is_sig' ):
+               issig     = __is_sig__ ):
     '''
     Main function to perform a MVA study. The results are stored
     in three different files: one storing the histograms and the
@@ -504,9 +507,9 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     :type outdir: str
     :param methconfig: configuration of the MVA method.
     :type methconfig: dict
-    :param is_sig: name for the additional column holding the \
+    :param issig: name for the additional column holding the \
     signal condition.
-    :type is_sig: str
+    :type issig: str
     :returns: MVA manager, training and testing samples.
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
     '''
@@ -562,14 +565,14 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, features, mvatype,
     print '-- Adding the signal flag'
 
     sigsmp = sigsmp.copy()
-    sigsmp[is_sig] = True
+    sigsmp[issig] = True
 
     bkgsmp = bkgsmp.copy()
-    bkgsmp[is_sig] = False
+    bkgsmp[issig] = False
     
     # Train the MVA method
     print '-- Initialize training'
-    train, test = mgr.fit(sigsmp, bkgsmp, is_sig)
+    train, test = mgr.fit(sigsmp, bkgsmp, issig)
     
     # Save the output method(s)
     mgr.save(func_path)
