@@ -1,5 +1,5 @@
 '''
-Module to manage MVA configurations.
+Module to manage configurations.
 '''
 
 __author__ = 'Miguel Ramos Pernas'
@@ -7,34 +7,16 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
-import configparser, os, re
+import importlib, inspect, os, re
+from configparser import ConfigParser
 from collections import OrderedDict as odict
 
 
-__all__ = ['check_configurations', 'genconfig', 'print_configuration', 'readconfig', 'save_config']
+__all__ = ['check_configurations', 'ConfigMgr', 'Configurable', 'print_configuration']
 
 
 # Name of the section holding the general configuration variables
 __main_config_name__ = 'GENERAL'
-__manager_name__     = 'manager'
-
-
-def _available_configuration( flst ):
-    '''
-    Return the next available configuration index.
-
-    :param flst: list of configuration files.
-    :type flst: list of str
-    :returns: amount of configuration files.
-    :rtype: int
-    '''
-    numbers = list(sorted(int(f[f.rfind('_') + 1 : f.rfind('.')]) for f in flst))
-    
-    for i, n in enumerate(numbers):
-        if i != n:
-            return i
-    
-    return len(numbers)
 
 
 def check_configurations( config, flst, skip = None ):
@@ -54,41 +36,228 @@ def check_configurations( config, flst, skip = None ):
     matches = []
     for f in flst:
         
-        cfg = configparser.ConfigParser()
+        cfg = ConfigMgr()
         cfg.read(f)
-
+        
         for s, l in skip.iteritems():
             for e in l:
                 cfg.remove_option(s, e)
-                
+        
         if cfg == config:
             matches.append((f, cfg))
             
     return matches
 
 
-def genconfig( name, dic ):
+class ConfigMgr(ConfigParser):
     '''
-    Generate a xml file containing the configuration stored
-    in the given dictionary.
-    
-    :param name: name of the configuration.
-    :type name: str
-    :param dic: dictionary with the configuration.
-    :type dic: dict
+    Class to manage configurations built using the
+    :class:`Configurable` class.
     '''
-    config = configparser.ConfigParser()
+    def __init__( self, *args, **kwargs ):
+        '''
+        See :meth:`configparser.ConfigParser.__init__`.
+        '''
+        ConfigParser.__init__(self, *args, **kwargs)
+        
+        self._dct = odict()
 
-    config.add_section(__main_config_name__)
-    config.set(__main_config_name__, 'cfgname', name)
-    
-    for e, v in sorted(dic.iteritems()):
-        _proc_config_element(config, __main_config_name__, e, v)
+    def _proc_config( self, name, config ):
+        '''
+        Process the given configuration dictionary.
+        
+        :param name: name of the section.
+        :type name: str
+        :param config: items to process.
+        :type config: dict
+        :returns: processed dictionary.
+        :rtype: dict
+        '''
+        return odict((k, self._proc_config_element(name, k, v))
+                     for k, v in sorted(config.iteritems())
+                     )
 
-    return config
+    def _proc_config_element( self, section, name, element ):
+        '''
+        Process one configuration element.
+
+        :param section: section attached to the element.
+        :type section: str
+        :param name: name of the element.
+        :type name: str
+        :param element: element to process.
+        :type element: any class type
+        :returns: processed element.
+        :rtype: any built class type
+        '''
+        if isinstance(element, Configurable):
+
+            # So later it can be easily loaded
+            self.set(section, name, element.full_name())
+            
+            self.add_section(name)
+            
+            dct = self._proc_config(name, element.config())
+
+            return element.build(dct)
+        else:
+            self.set(section, name, str(element))
+
+            try:
+                return eval(element)
+            except:
+                return element
+
+    @classmethod
+    def from_config( cls, path ):
+        '''
+        Build the class from a configuration file.
+
+        :param path: path to the configuration file.
+        :type path: str
+        :returns: configuration manager.
+        :rtype: this class type
+        '''
+        cfg = cls()
+        cfg.read(path)
+
+        # Process the configuration
+        res = odict()
+        for name, section in reversed(cfg.items()):
+            
+            sub = odict()
+            
+            for k, v in section.iteritems():
+                try:
+                    sub[k] = eval(v)
+                except:
+                    sub[k] = v
+
+            res[name] = sub
+
+        # Build all the classes
+        its = res.items()
+        for i, (name, dct) in enumerate(its):
+            for n, d in its[:i]:
+                if n in dct:
+
+                    # Access the class constructor
+                    path = dct[n]
+                    
+                    modname = path[:path.rfind('.')]
+                    clsname = path[path.rfind('.') + 1:]
+                    
+                    const  = getattr(importlib.import_module(modname), clsname)
+                    
+                    # Remove the attributes not present in the constructor
+                    args = inspect.getargspec(const.__init__).args
+                    args.remove('self')
+
+                    inputs = {k: v for k, v in d.iteritems() if k in args}
+
+                    # Call the constructor
+                    dct[n] = const(**inputs)
+
+        cfg._dct = res
+
+        return cfg
+
+    @classmethod
+    def from_configurable( cls, name, cfg ):
+        '''
+        Build the class from a :class:`Configurable` object.
+
+        :param cfg: input configurable.
+        :type cfg: Configurable
+        :returns: configuration manager.
+        :rtype: this class type
+        '''
+        return cls.from_dict({name: cfg})
+        
+    @classmethod
+    def from_dict( cls, dct ):
+        '''
+        Build the class from a dictionary.
+
+        :param dct: input dictionary.
+        :type dct: dict
+        :returns: configuration manager.
+        :rtype: this class type
+        '''
+        cfg = cls()
+        
+        cfg.add_section(__main_config_name__)
+        
+        cfg._dct = cfg._proc_config(__main_config_name__, dct)
+        
+        return cfg
+        
+    def processed_config( self ):
+        '''
+        :returns: processed configuration dictionary (where \
+        all the built classes are saved.
+        :rtype: dict
+        '''
+        return self._dct
+
+    def save( self, path ):
+        '''
+        :param cfg: configuration.
+        :type cfg: ConfigParser
+        :param path: path to save the output file.
+        :type path: str
+        '''
+        print 'INFO: Generate new configuration file "{}"'\
+            ''.format(path)
+
+        with open(path, 'wb') as f:
+            self.write(f)
 
 
-def _get_configurations( path, name_pattern ):
+class Configurable:
+    '''
+    Class to store any class constructor plus its
+    configuration.
+    '''
+    def __init__( self, const, dct = None ):
+        '''
+        :param const: constructor of the configurable class.
+        :type const: any class constructor
+        :param dct: configuration of the class.
+        :type dct: dict
+        '''
+        dct = dct or {}
+        
+        self._dct   = dct
+        self._const = const
+
+    def build( self, dct ):
+        '''
+        :param dct: configuration to build the class.
+        :type dct: dict
+        :returns: built class
+        :rtype: built class type
+        '''
+        return self._const(**dct)
+
+    def config( self ):
+        '''
+        :returns: configuration for the class in this object.
+        :rtype: dict
+        '''
+        return self._dct
+
+    def full_name( self ):
+        '''
+        :returns: full name of the class attached to \
+        this configurable.
+        :rtype: str
+        '''
+        cl = self._const
+        return '{}.{}'.format(cl.__module__, cl.__name__)
+
+
+def get_configurations( path, name_pattern ):
     '''
     Get the list of current configurations in "path".
     
@@ -104,64 +273,6 @@ def _get_configurations( path, name_pattern ):
     full_lst = ['{}/{}'.format(path, f.string) for f in matches if f is not None]
     
     return full_lst
-
-
-def _makedirs( path ):
-    '''
-    Check if the path exists and makes the directory if not.
-    
-    :param path: input path.
-    :type path: str
-    '''
-    try:
-        os.makedirs(path)
-        print 'INFO: Creating output directory "{}"'.format(path)
-    except:
-        pass
-
-
-def _manage_config_matches( matches, conf_id ):
-    '''
-    Manage those configurations wich matched one given,
-    asking to overwrite the files or create a new one
-    with the given configuration ID.
-
-    :param matches: list of files matching the configuration.
-    :type matches: list of str
-    :param conf_id: proposed configuration ID.
-    :type conf_id: str
-    :returns: configuration ID.
-    :rtype: str
-    '''
-    if matches:
-
-        print 'WARNING: Found {} file(s) with the same configuration'.format(len(matches))
-        
-        expath = matches[-1][0]
-        
-        d = ''
-        while d not in ('Y', 'n'):
-            d = raw_input('WARNING: Overwrite existing configuration file '\
-                              '"{}"? (Y/[n]): '.format(expath)
-                          ).strip()
-            if not d:
-                d = 'n'
-
-        if d == 'Y':
-            cfg_path = expath
-            conf_id  = readconfig(expath)[__main_config_name__]['confid']
-        else:
-            d = ''
-            while d not in ('Y', 'n'):
-                d = raw_input('WARNING: Do you want to create a new configuration file? (Y/[n]): ')
-                    
-                if not d:
-                    d = 'n'
-            
-            if d == 'n':
-                exit(0)
-
-    return conf_id
 
 
 def print_configuration( cfg, indent = 0 ):
@@ -188,55 +299,3 @@ def print_configuration( cfg, indent = 0 ):
                 print '{:>{}}'.format(')', indent + 5)
         else:
             print '{} = {}'.format(d, v)
-
-
-def _proc_config_element( config, root, name, element ):
-    '''
-    Process the given element storing a configuration value
-    '''
-    if hasattr(element, '__dict__'):
-
-        cl = element.__class__
-
-        # So later it can be easily loaded
-        full_name = '{}.{}'.format(cl.__module__, cl.__name__)
-
-        config.set(root, name, full_name)
-
-        config.add_section(name)
-        
-        for e, v in sorted(vars(element).iteritems()):
-            _proc_config_element(config, name, e, v)
-    else:
-        config.set(root, name, str(element))
-
-
-def readconfig( path ):
-    '''
-    Read a xml file storing a configuration and return the
-    name of the root and a dictionary with the configuration.
-
-    :param path: path to the input file.
-    :type path: str
-    :returns: tuple with the tag and configuration of the \
-    input file.
-    :rtype: tuple(str, dict)
-    '''
-    c = configparser.ConfigParser()
-
-    with open(path, 'rb') as f:
-        c.read(path)
-    
-    return c
-
-def save_config( cfg, path ):
-    '''
-    :param cfg: configuration.
-    :type cfg: ConfigParser
-    :param path: path to save the output file.
-    :type path: str
-    '''
-    print 'INFO: Generate new configuration file "{}"'.format(path)
-
-    with open(path, 'wb') as f:
-        cfg.write(f)

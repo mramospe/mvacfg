@@ -6,41 +6,42 @@ __author__ = 'Miguel Ramos Pernas'
 __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
+# Python
+import os
+
 # Scikit-learn
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 # mvacfg
-import mvacfg
+from mvacfg import ConfigMgr, Configurable, StdMVAmgr
 
 
 __fname__ = 'test_config.ini'
 
 
-def test_mvamgr():
+def test_configmgr():
     '''
-    Test the MVA manager constructor from a configuration file.
+    Test the configuration manager constructor from a configuration file.
     '''
     # Generate a fake manager and save its configuration
-    meth = mvacfg.StdMVAmethod()
+    base = Configurable(DecisionTreeClassifier)
     
-    fake_mgr = meth.build_mgr(
-        AdaBoostClassifier(base_estimator = DecisionTreeClassifier()),
-        ['A', 'B', 'C'])
+    clss = Configurable(AdaBoostClassifier, {'base_estimator': base})
 
-    cfg = {
-        'signame' : 'sig',
-        'bkgname' : 'bkg',
-        'manager' : fake_mgr,
-        'outdir'  : '.'
-    }
+    mgr = Configurable(StdMVAmgr, {'classifier': clss, 'features'  : ['A', 'B', 'C']})
 
+    cfg = ConfigMgr.from_configurable('manager', mgr)
+    
     path = './' + __fname__
     
-    cfg = mvacfg.genconfig('dummy', cfg)
-    mvacfg.save_config(cfg, path)
+    cfg.save(path)
 
-    # Build the manager
-    mgr = mvacfg.MVAmgr.from_config(path)
+    # Build the configuration from the file and get the manager
+    rcfg = ConfigMgr.from_config(path)
+    
+    mgr = rcfg.processed_config()['manager']
 
-test_mvamgr()
+    os.remove(__fname__)
+    
+    assert cfg == rcfg

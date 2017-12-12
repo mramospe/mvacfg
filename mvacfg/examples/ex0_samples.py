@@ -20,6 +20,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 # mvacfg
 import mvacfg
+from mvacfg import Configurable
 from mvacfg.core import __is_sig__, __mva_dec__
 
 
@@ -47,39 +48,50 @@ def main():
     bkg['C'] = np.random.exponential(200, n)
     _common(bkg)
 
-    # Configuration of the classifier
-    classifier = AdaBoostClassifier
+    # Configurable of the base estimator
+    bes_cfg = Configurable(
+        DecisionTreeClassifier,
+        {
+        'criterion'         : 'gini',
+        'max_depth'         : 3,
+        'max_features'      : None,
+        'max_leaf_nodes'    : None,
+        'min_samples_leaf'  : 0.5,
+        'min_samples_split' : 2,
+        'random_state'      : None,
+        'splitter'          : 'best'
+        })
+
+    # Configurable of the classifier estimator
+    class_cfg = Configurable(
+        AdaBoostClassifier,
+        { 'algorithm'     : 'SAMME',
+          'base_estimator': bes_cfg,
+          'learning_rate' : 0.0001,
+          'n_estimators'  : 5,
+          'random_state'  : None,
+        })
+
+    # Configurables of the standard and k-folding methods
+    std_cfg   = Configurable(
+        mvacfg.StdMVAmgr,
+        {'classifier' : class_cfg,
+         'features'   : ['A', 'B', 'C', 'D', 'E']
+        })
+    kfold_cfg = Configurable(
+        mvacfg.KFoldMVAmgr,
+        {'classifier' : class_cfg,
+         'nfolds'     : 2,
+         'features'   : ['A', 'B', 'C', 'D', 'E'],
+         'splitvar'   : 'evt'
+        })
     
-    cfg = { 'algorithm'     : 'SAMME',
-            'base_estimator':
-                DecisionTreeClassifier(
-            criterion         = 'gini',
-            max_depth         = 3,
-            max_features      = None,
-            max_leaf_nodes    = None,
-            min_samples_leaf  = 0.5,
-            min_samples_split = 2,
-            random_state      = None,
-            splitter          = 'best'
-            ),
-            'learning_rate' : 0.0001,
-            'n_estimators'  : 5,
-            'random_state'  : None,
-            }
-
-    std   = mvacfg.StdMVAmethod(0.7, 0.7)
-    kfold = mvacfg.KFoldMVAmethod(2, 'evt')
-
-    features = ['A', 'B', 'C', 'D', 'E']
-
     # Do the study
     test_smps = odict()
-    for name, mcfg in [('std', std), ('kfold', kfold)]:
+    for name, cfg in [('std', std_cfg), ('kfold', kfold_cfg)]:
+
         print '-- Process mode "{}"'.format(name)
-        _, train, test = mvacfg.mva_study( name, 'sig', sig, 'bkg', bkg, features, classifier,
-                                           mvaconfig = cfg,
-                                           methconfig = mcfg
-        )
+        _, train, test = mvacfg.mva_study(name, 'sig', sig, 'bkg', bkg, cfg)
         mvacfg.plot_overtraining_hists(train, test)
         plt.show()
 

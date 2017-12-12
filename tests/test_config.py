@@ -31,11 +31,10 @@ def _generate_and_check( func ):
         Create the configuration file and read it, checking
         that the two versions match.
         '''
-        cfg = mvacfg.genconfig('test', func())
+        cfg = mvacfg.ConfigMgr.from_dict(func())
+        cfg.save(__fname__)
 
-        mvacfg.save_config(cfg, __fname__)
-
-        read = mvacfg.readconfig(__fname__)
+        read = mvacfg.ConfigMgr.from_config(__fname__)
 
         matches = mvacfg.check_configurations(cfg, [__fname__])
 
@@ -58,41 +57,30 @@ def test_basic_config():
         }
 
 
-@_generate_and_check
-def test_dict_config():
+class ttcl:
     '''
-    Test a configuration involving a dictionary.
+    Small class to test the configuration module.
     '''
-    return {
-        'string' : 'this is a test',
-        'int'    : 1,
-        'float'  : 0.1,
-        'dict'   : {
-            'sub-float'  : 1.1,
-            'sub-int'    : 1,
-            'sub-string' : 'ss'
-            }
-        }
-    
+    def __init__( self, name, first, second = 2. ):
+        '''
+        Store some attributes.
+        '''
+        self.name   = name
+        self.first  = first
+        self.second = second
+
 
 @_generate_and_check
 def test_class_config():
     '''
     Test a configuration holding a class.
     '''
-    class ttcl:
-        
-        def __init__( self ):
-            '''
-            Stores some attributes.
-            '''
-            self.name   = 'ttcl'
-            self.first  = 1
-            self.second = 2
-
     return {
         'string' : 'this is a test',
-        'object' : ttcl(),
+        'object' : mvacfg.Configurable(ttcl,
+                                       {'name' : 'ttcl',
+                                        'first': 1
+                                       }),
         'int'    : 1,
         'float'  : 0.1
         }
