@@ -10,7 +10,8 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 import os
 
 # mvacfg
-from mvacfg.config import ConfigMgr
+from mvacfg.config import ConfigMgr, __main_config_name__
+
 
 __all__ = []
 

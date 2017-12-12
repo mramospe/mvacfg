@@ -12,7 +12,7 @@ from configparser import ConfigParser
 from collections import OrderedDict as odict
 
 
-__all__ = ['check_configurations', 'ConfigMgr', 'Configurable', 'print_configuration']
+__all__ = ['check_configurations', 'get_configurations', 'ConfigMgr', 'Configurable', 'print_configuration']
 
 
 # Name of the section holding the general configuration variables

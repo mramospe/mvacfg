@@ -447,7 +447,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     _fmg._makedirs(mva_dir)
     
     # Get the available configuration ID
-    flst    = _fmg._get_configurations(mva_dir, 'mva_config')
+    flst    = config.get_configurations(mva_dir, 'mva_config')
     conf_id = _fmg._available_configuration(flst)
     
     # Check if any other file is storing the same configuration
