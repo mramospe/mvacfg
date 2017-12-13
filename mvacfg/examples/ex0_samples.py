@@ -17,6 +17,7 @@ import joblib, os, pandas
 # Scikit-learn
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn import datasets
 
 # mvacfg
 import mvacfg
@@ -26,37 +27,27 @@ from mvacfg.core import __is_sig__, __mva_dec__
 
 def main():
 
-    n = 1000
+    # Load a sample
+    dt = datasets.load_breast_cancer()
+    
+    data = pandas.DataFrame(dt.data)
+    cols = list(str(c) for c in data.columns)
+    data.columns = cols
 
-    # Common variables for both signal and background
-    def _common( smp ):
-        smp['D']   = smp['A']**2
-        smp['E']   = np.log(np.abs(smp['A']*smp['B']*smp['C']))
-        smp['evt'] = np.arange(len(smp))
-
-    # Define signal sample
-    sig = pandas.DataFrame()
-    sig['A'] = np.random.normal(0., 4., n)
-    sig['B'] = np.random.exponential(10, n)
-    sig['C'] = np.random.exponential(100, n)
-    _common(sig)
-
-    # Define background sample
-    bkg = pandas.DataFrame()
-    bkg['A'] = np.random.normal(0., 8., n)
-    bkg['B'] = np.random.exponential(20, n)
-    bkg['C'] = np.random.exponential(200, n)
-    _common(bkg)
-
+    data['evt'] = range(len(data))
+    
+    sig = data[dt.target == True]
+    bkg = data[dt.target == False]
+    
     # Configurable of the base estimator
     bes_cfg = Configurable(
         DecisionTreeClassifier,
         {
         'criterion'         : 'gini',
-        'max_depth'         : 3,
+        'max_depth'         : 20,
         'max_features'      : None,
         'max_leaf_nodes'    : None,
-        'min_samples_leaf'  : 0.5,
+        'min_samples_leaf'  : 0.01,
         'min_samples_split' : 2,
         'random_state'      : None,
         'splitter'          : 'best'
@@ -67,22 +58,22 @@ def main():
         AdaBoostClassifier,
         { 'algorithm'     : 'SAMME',
           'base_estimator': bes_cfg,
-          'learning_rate' : 0.0001,
-          'n_estimators'  : 5,
+          'learning_rate' : 0.25,
+          'n_estimators'  : 27,
           'random_state'  : None,
         })
 
     # Configurables of the standard and k-folding methods
-    std_cfg   = Configurable(
+    std_cfg = Configurable(
         mvacfg.StdMVAmgr,
         {'classifier' : class_cfg,
-         'features'   : ['A', 'B', 'C', 'D', 'E']
+         'features'   : cols
         })
     kfold_cfg = Configurable(
         mvacfg.KFoldMVAmgr,
         {'classifier' : class_cfg,
          'nfolds'     : 2,
-         'features'   : ['A', 'B', 'C', 'D', 'E'],
+         'features'   : cols,
          'splitvar'   : 'evt'
         })
     
@@ -96,23 +87,8 @@ def main():
         plt.show()
 
         test_smps[name] = test
-    
-    # Create a random sample and apply the methods
-    print '-- Create independent sample'
-
-    nsig = 1000
-    nbkg = n - nsig
-    
-    smp = pandas.DataFrame()
-    smp['A'] = np.concatenate([np.random.normal(0., 4., nsig),
-                               np.random.normal(0., 8., nbkg)])
-    smp['B'] = np.concatenate([np.random.exponential(10, nsig),
-                               np.random.exponential(20, nbkg)])
-    smp['C'] = np.concatenate([np.random.exponential(100, nsig),
-                               np.random.exponential(200, nbkg)])
-    _common(smp)
-
-    # Apply the two methods to the random sample
+        
+    # Apply the two methods to the merged sample
     for name in ('std',  'kfold'):
         print '-- Apply MVA method "{}"'.format(name)
 
@@ -122,21 +98,21 @@ def main():
         
         s = joblib.load(os.path.join(d, f))
         
-        s.apply(smp, '{}_dec'.format(name), '{}_pred'.format(name))
+        s.apply(data, '{}_dec'.format(name), '{}_pred'.format(name))
 
     # Compare the two methods
     com = {'histtype': 'stepfilled', 'range': (-1, 1), 'alpha': 0.5}
 
     fig, (ax0, ax1) = plt.subplots(1, 2)
     
-    ax0.hist(smp['std_dec'], color = 'b', label = 'std', **com)
-    ax0.hist(smp['kfold_dec'], color = 'r', label = 'kfold', **com)
+    ax0.hist(data['std_dec'], color = 'b', label = 'std', **com)
+    ax0.hist(data['kfold_dec'], color = 'r', label = 'kfold', **com)
     ax0.legend()
     ax0.set_xlabel('MVA decision')
     ax0.set_ylabel('Normalized entries')
 
-    for (s, smp), c in zip(test_smps.iteritems(), ('b', 'r')):
-        bkg_rej, sig_eff = mvacfg.ROC(smp[__is_sig__], smp[__mva_dec__])
+    for (s, data), c in zip(test_smps.iteritems(), ('b', 'r')):
+        bkg_rej, sig_eff = mvacfg.ROC(data[__is_sig__], data[__mva_dec__])
         ax1.plot(bkg_rej, sig_eff, c = c, label = s)
     ax1.legend()
     ax1.set_xlabel('background rejection')

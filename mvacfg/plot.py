@@ -93,20 +93,20 @@ def plot_overtraining_hists( train, test, where = None, **kwargs ):
     xerr = (edges[1] - edges[0])/2.
 
     # Plot training histograms
-    for s, c in ((bkg_tr, 'b'), (sig_tr, 'r')):
+    for s, c in ((bkg_tr, 'r'), (sig_tr, 'b')):
 
         wgts = s/float(np.sum(s))
         
         where.hist(centers, edges, weights = wgts, histtype = 'stepfilled', color = c, alpha = 0.5)
         
     # Plot testing histograms
-    for s, c in ((bkg_te, 'b'), (sig_te, 'r')):
+    for s, c in ((bkg_te, 'r'), (sig_te, 'b')):
 
         n    = float(np.sum(s))        
         yerr = np.sqrt(s)/n
         yv   = s/n
         
-        where.errorbar(centers, yv, xerr, yerr, ls = 'none', c = c)
+        where.errorbar(centers, yv, yerr, xerr, ls = 'none', c = c)
 
     where.set_xlabel('MVA decision')
     where.set_ylabel('Normalized entries')
