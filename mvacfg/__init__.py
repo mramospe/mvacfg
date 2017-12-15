@@ -20,7 +20,7 @@ for loader, module_name, ispkg in pkgutil.walk_packages(__path__):
     
     __all__.append(module_name)
     
-    if not ispkg:
+    if not ispkg and not module_name.startswith('_'):
         # Import all classes and functions
         mod = importlib.import_module('mvacfg.' + module_name)
         

@@ -8,21 +8,25 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
-import configparser, importlib, inspect, joblib, os, pandas
+import importlib, inspect, joblib, os, pandas
 import numpy as np
 from collections import OrderedDict as odict
 from copy import deepcopy
+
+# confmgr
+import confmgr
 
 # Scikit-learn
 from sklearn.model_selection import train_test_split
 
 # Local
-import mvacfg._fmg as _fmg
+import mvacfg._aux as _aux
 import mvacfg.config as config
 from mvacfg.config import __main_config_name__
 
 
-__all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'mva_study']
+__all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'manager_name', 'mva_study']
+
 
 # Global names for the MVA outputs
 __mva_dec__  = 'mva_dec'
@@ -33,6 +37,16 @@ __is_sig__ = 'is_sig'
 
 # Manager section name in the configuration file
 __manager_name__ = 'manager'
+
+
+def manager_name():
+    '''
+    Return the name of the manager in the configuration files.
+    
+    :returns: name of the manager ("manager" by default).
+    :rtype: str
+    '''
+    return __manager_name__
 
 
 class MVAmgr:
@@ -429,7 +443,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     :returns: MVA manager, training and testing samples.
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
     '''
-    cfg = config.ConfigMgr.from_configurable(__manager_name__, cfg)
+    cfg = confmgr.ConfMgr.from_config(__manager_name__, cfg)
     
     # Get the raw configuration from the inputs
     for k, v in (
@@ -437,32 +451,32 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
             ('bkgname', bkgname),
             ('outdir' , outdir)
             ):
-        cfg.set(__main_config_name__, k, v)
+        cfg.set(confmgr.main_config_name(), k, v)
     
     # Get the manager
     mgr = cfg.processed_config()[__manager_name__]
     
     # Create the output directory
     mva_dir = '{}/mva_configs_{}'.format(outdir, name)
-    _fmg._makedirs(mva_dir)
+    _aux._makedirs(mva_dir)
     
     # Get the available configuration ID
-    flst    = config.get_configurations(mva_dir, 'mva_config')
-    conf_id = _fmg._available_configuration(flst)
+    cfglst  = confmgr.get_configurations(mva_dir, 'mva_config')
+    conf_id = config.available_configuration(flst)
     
     # Check if any other file is storing the same configuration
-    matches = config.check_configurations(
-        cfg, flst, {__main_config_name__: ['funcfile', 'confid']}
+    matches = confmgr.check_configurations(
+        cfg, cfglst, {main_config_name(): ['funcfile', 'confid']}
     )
-    conf_id  = _fmg._manage_config_matches(matches, conf_id)
+    conf_id  = confmgr.manage_config_matches(matches, conf_id)
     cfg_path = '{}/mva_config_{}.ini'.format(mva_dir, conf_id)
     
     # Save the configuration ID
-    cfg.set(__main_config_name__, 'confid', str(conf_id))
+    cfg.set(main_config_name(), 'confid', str(conf_id))
     
     # Path to the file storing the MVA function
     func_path = '{}/mva_func_{}.pkl'.format(mva_dir, conf_id)
-    cfg.set(__main_config_name__, 'funcfile', func_path)
+    cfg.set(main_config_name(), 'funcfile', func_path)
 
     # Generating the INI file must be the last thing to do
     cfg.save(cfg_path)
@@ -471,7 +485,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     print '*************************'
     print '*** MVA configuration ***'
     print '*************************'
-    config.print_configuration(cfg)
+    print cfg
     print '*************************'
     
     # Add the signal flag

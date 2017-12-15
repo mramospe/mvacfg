@@ -40,7 +40,7 @@ setup(
     scripts = ['scripts/read_mva_configs'],
 
     # Requisites
-    install_requires = ['configparser', 'matplotlib', 'numpy', 'pytest', 'scikit-learn'],
+    install_requires = ['confmgr', 'matplotlib', 'numpy', 'pytest', 'scikit-learn'],
 
     # Test requirements
     setup_requires = ['pytest-runner'],
