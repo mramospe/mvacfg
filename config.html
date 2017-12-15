@@ -24,8 +24,8 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="plot" href="plot.html" />
-    <link rel="prev" title="Welcome to mvacfg’s documentation!" href="index.html" />
+    <link rel="next" title="core" href="core.html" />
+    <link rel="prev" title="Introduction" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -43,103 +43,20 @@
             
   <div class="section" id="module-mvacfg.config">
 <span id="config"></span><h1>config<a class="headerlink" href="#module-mvacfg.config" title="Permalink to this headline">¶</a></h1>
-<p>Module to manage MVA configurations.</p>
+<p>Module with some functions to handle configuration files.</p>
 <dl class="function">
-<dt id="mvacfg.config.check_configurations">
-<code class="descclassname">mvacfg.config.</code><code class="descname">check_configurations</code><span class="sig-paren">(</span><em>config</em>, <em>flst</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/config.html#check_configurations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.config.check_configurations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check in the given path if any other files exist with the
-same configuration.</p>
+<dt id="mvacfg.config.available_configuration">
+<code class="descclassname">mvacfg.config.</code><code class="descname">available_configuration</code><span class="sig-paren">(</span><em>flst</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/config.html#available_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.config.available_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the next available configuration index.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>config</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – configuration to check.</li>
-<li><strong>flst</strong> (<em>list of str</em>) – list of configuration files.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flst</strong> (<em>list of str</em>) – list of configuration files.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of configurations matching the input.</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">amount of configuration files.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of str</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="mvacfg.config.genconfig">
-<code class="descclassname">mvacfg.config.</code><code class="descname">genconfig</code><span class="sig-paren">(</span><em>name</em>, <em>dic</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/config.html#genconfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.config.genconfig" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a xml file containing the configuration stored
-in the given dictionary.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – name of the configuration.</li>
-<li><strong>dic</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – dictionary with the configuration.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="mvacfg.config.print_configuration">
-<code class="descclassname">mvacfg.config.</code><code class="descname">print_configuration</code><span class="sig-paren">(</span><em>cfg</em>, <em>indent=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/config.html#print_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.config.print_configuration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Display the given configuration.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>cfg</strong> – configuration.</li>
-<li><strong>indent</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – indentation for the print function.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Rtype cfg:</th><td class="field-body"><p class="first last">dict</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="mvacfg.config.readconfig">
-<code class="descclassname">mvacfg.config.</code><code class="descname">readconfig</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/config.html#readconfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.config.readconfig" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a xml file storing a configuration and return the
-name of the root and a dictionary with the configuration.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path to the input file.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">tuple with the tag and configuration of the     input file.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)">tuple</a>(<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>, <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a>)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="mvacfg.config.save_config">
-<code class="descclassname">mvacfg.config.</code><code class="descname">save_config</code><span class="sig-paren">(</span><em>cfg</em>, <em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/config.html#save_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.config.save_config" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>cfg</strong> (<a class="reference external" href="https://docs.python.org/2/library/configparser.html#module-ConfigParser" title="(in Python v2.7)"><em>ConfigParser</em></a>) – configuration.</li>
-<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path to save the output file.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)">int</a></td>
 </tr>
 </tbody>
 </table>
@@ -165,16 +82,16 @@ name of the root and a dictionary with the configuration.</p>
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">core</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot.html">plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to mvacfg’s documentation!</a></li>
-      <li>Next: <a href="plot.html" title="next chapter">plot</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter">Introduction</a></li>
+      <li>Next: <a href="core.html" title="next chapter">core</a></li>
   </ul></li>
 </ul>
 </div>
@@ -196,7 +113,7 @@ name of the root and a dictionary with the configuration.</p>
       &copy;2017, Miguel Ramos Pernas.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |

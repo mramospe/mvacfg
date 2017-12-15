@@ -40,7 +40,7 @@
           <div class="body" role="main">
             
   <h1>Source code for mvacfg.plot</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Classes and function to plot MVA results using matplotlib.</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
@@ -57,7 +57,7 @@
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">roc_curve</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ks_test&#39;</span><span class="p">,</span> <span class="s1">&#39;ROC&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ks_test&#39;</span><span class="p">,</span> <span class="s1">&#39;overtraining_hists&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_overtraining_hists&#39;</span><span class="p">,</span> <span class="s1">&#39;ROC&#39;</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="ks_test"><a class="viewcode-back" href="../../plot.html#mvacfg.plot.ks_test">[docs]</a><span class="k">def</span> <span class="nf">ks_test</span><span class="p">(</span> <span class="n">mva_dec_A</span><span class="p">,</span> <span class="n">mva_dec_B</span><span class="p">,</span> <span class="n">maxpv</span> <span class="p">):</span>
@@ -78,9 +78,80 @@
                                   <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">mva_dec_B</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">pvalue</span> <span class="o">&gt;</span> <span class="n">maxpv</span><span class="p">:</span>
         <span class="nb">print</span> <span class="s1">&#39;WARNING: Kolmogorov-Smirnov test rejects the &#39;</span>\
-            <span class="s1">&#39;null hypothesis (p-value = </span><span class="si">{:.4f}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pvalue</span><span class="p">)</span>
+            <span class="s1">&#39;null hypothesis (p-value = {:.4f})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pvalue</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">ks_stat</span><span class="p">,</span> <span class="n">pvalue</span></div>
+
+
+<div class="viewcode-block" id="overtraining_hists"><a class="viewcode-back" href="../../plot.html#mvacfg.plot.overtraining_hists">[docs]</a><span class="k">def</span> <span class="nf">overtraining_hists</span><span class="p">(</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">is_sig</span> <span class="o">=</span> <span class="s1">&#39;is_sig&#39;</span><span class="p">,</span> <span class="n">rg</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">nbins</span> <span class="o">=</span> <span class="mi">100</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Make the overtraining histograms from the training and</span>
+<span class="sd">    testing samples. To make these histograms and plot the</span>
+<span class="sd">    results see :func:`plot_overtraining_hists`.</span>
+
+<span class="sd">    :returns: values of the drawn histograms: training \</span>
+<span class="sd">    background, training signal, testing background, \</span>
+<span class="sd">    testing signal and the centers of the bins.</span>
+<span class="sd">    :rtype: tuple(list(4:math:`\times` array-like), array-like)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">bkg_train</span> <span class="o">=</span> <span class="n">train</span><span class="p">[</span><span class="n">train</span><span class="p">[</span><span class="n">is_sig</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">][</span><span class="s1">&#39;mva_dec&#39;</span><span class="p">]</span>
+    <span class="n">sig_train</span> <span class="o">=</span> <span class="n">train</span><span class="p">[</span><span class="n">train</span><span class="p">[</span><span class="n">is_sig</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">][</span><span class="s1">&#39;mva_dec&#39;</span><span class="p">]</span>
+    
+    <span class="n">bkg_test</span> <span class="o">=</span> <span class="n">test</span><span class="p">[</span><span class="n">test</span><span class="p">[</span><span class="n">is_sig</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">][</span><span class="s1">&#39;mva_dec&#39;</span><span class="p">]</span>
+    <span class="n">sig_test</span> <span class="o">=</span> <span class="n">test</span><span class="p">[</span><span class="n">test</span><span class="p">[</span><span class="n">is_sig</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">][</span><span class="s1">&#39;mva_dec&#39;</span><span class="p">]</span>
+
+    <span class="n">ss</span> <span class="o">=</span> <span class="p">(</span><span class="n">bkg_train</span><span class="p">,</span> <span class="n">sig_train</span><span class="p">,</span> <span class="n">bkg_test</span><span class="p">,</span> <span class="n">sig_test</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">rg</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="n">mn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ss</span><span class="p">])</span>
+        <span class="n">mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ss</span><span class="p">])</span>
+        <span class="n">mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nextafter</span><span class="p">(</span><span class="n">mx</span><span class="p">,</span> <span class="mf">2.</span><span class="o">*</span><span class="n">mx</span><span class="p">)</span>
+        <span class="n">rg</span> <span class="o">=</span> <span class="p">(</span><span class="n">mn</span><span class="p">,</span> <span class="n">mx</span><span class="p">)</span>
+
+    <span class="n">hists</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ss</span><span class="p">:</span>
+        <span class="n">values</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">nbins</span><span class="p">,</span> <span class="nb">range</span> <span class="o">=</span> <span class="n">rg</span><span class="p">)</span>
+        <span class="n">hists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">hists</span><span class="p">,</span> <span class="n">edges</span></div>
+
+
+<div class="viewcode-block" id="plot_overtraining_hists"><a class="viewcode-back" href="../../plot.html#mvacfg.plot.plot_overtraining_hists">[docs]</a><span class="k">def</span> <span class="nf">plot_overtraining_hists</span><span class="p">(</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">where</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Plot the overtraining histograms using the default</span>
+<span class="sd">    configuration.</span>
+
+<span class="sd">    See :func:`overtraining_hists`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">where</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">where</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    
+    <span class="p">(</span><span class="n">bkg_tr</span><span class="p">,</span> <span class="n">sig_tr</span><span class="p">,</span> <span class="n">bkg_te</span><span class="p">,</span> <span class="n">sig_te</span><span class="p">),</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">overtraining_hists</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">centers</span> <span class="o">=</span> <span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span>
+    
+    <span class="n">xerr</span> <span class="o">=</span> <span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span>
+
+    <span class="c1"># Plot training histograms</span>
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">((</span><span class="n">bkg_tr</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">sig_tr</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)):</span>
+
+        <span class="n">wgts</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+        
+        <span class="n">where</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">centers</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">wgts</span><span class="p">,</span> <span class="n">histtype</span> <span class="o">=</span> <span class="s1">&#39;stepfilled&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="n">c</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span>
+        
+    <span class="c1"># Plot testing histograms</span>
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">((</span><span class="n">bkg_te</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">sig_te</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)):</span>
+
+        <span class="n">n</span>    <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>        
+        <span class="n">yerr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">/</span><span class="n">n</span>
+        <span class="n">yv</span>   <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">n</span>
+        
+        <span class="n">where</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">centers</span><span class="p">,</span> <span class="n">yv</span><span class="p">,</span> <span class="n">yerr</span><span class="p">,</span> <span class="n">xerr</span><span class="p">,</span> <span class="n">ls</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">where</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;MVA decision&#39;</span><span class="p">)</span>
+    <span class="n">where</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Normalized entries&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ROC"><a class="viewcode-back" href="../../plot.html#mvacfg.plot.ROC">[docs]</a><span class="k">def</span> <span class="nf">ROC</span><span class="p">(</span> <span class="n">sig_sta</span><span class="p">,</span> <span class="n">mva_dec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
@@ -122,8 +193,8 @@
 <h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../config.html">config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../core.html">core</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../plot.html">plot</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../utils.html">utils</a></li>
 </ul>
 
 <div class="relations">
@@ -153,7 +224,7 @@
       &copy;2017, Miguel Ramos Pernas.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
     </div>
