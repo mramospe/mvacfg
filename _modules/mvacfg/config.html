@@ -48,29 +48,74 @@
 <span class="n">__email__</span>  <span class="o">=</span> <span class="s1">&#39;miguel.ramos.pernas@cern.ch&#39;</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;available_configuration&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;available_configuration&#39;</span><span class="p">,</span> <span class="s1">&#39;manage_config_matches&#39;</span><span class="p">]</span>
 
 
-<span class="c1"># Name of the section holding the general configuration variables</span>
-<span class="n">__main_config_name__</span> <span class="o">=</span> <span class="s1">&#39;GENERAL&#39;</span>
+<span class="c1"># confmgr</span>
+<span class="kn">from</span> <span class="nn">confmgr</span> <span class="k">import</span> <span class="n">ConfMgr</span><span class="p">,</span> <span class="n">main_section_name</span>
 
 
-<div class="viewcode-block" id="available_configuration"><a class="viewcode-back" href="../../config.html#mvacfg.config.available_configuration">[docs]</a><span class="k">def</span> <span class="nf">available_configuration</span><span class="p">(</span> <span class="n">flst</span> <span class="p">):</span>
+<div class="viewcode-block" id="available_configuration"><a class="viewcode-back" href="../../config.html#mvacfg.config.available_configuration">[docs]</a><span class="k">def</span> <span class="nf">available_configuration</span><span class="p">(</span> <span class="n">cfglst</span> <span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Return the next available configuration index.</span>
 
-<span class="sd">    :param flst: list of configuration files.</span>
-<span class="sd">    :type flst: list of str</span>
+<span class="sd">    :param cfglst: list of configuration files.</span>
+<span class="sd">    :type cfglst: list(confmgr.ConfMgr)</span>
 <span class="sd">    :returns: amount of configuration files.</span>
 <span class="sd">    :rtype: int</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">numbers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flst</span><span class="p">))</span>
+    <span class="n">numbers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">main_section_name</span><span class="p">(),</span> <span class="s1">&#39;confid&#39;</span><span class="p">))</span>
+                          <span class="k">for</span> <span class="n">cfg</span> <span class="ow">in</span> <span class="n">cfglst</span><span class="p">))</span>
     
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">numbers</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">i</span>
     
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="manage_config_matches"><a class="viewcode-back" href="../../config.html#mvacfg.config.manage_config_matches">[docs]</a><span class="k">def</span> <span class="nf">manage_config_matches</span><span class="p">(</span> <span class="n">matches</span><span class="p">,</span> <span class="n">conf_id</span> <span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Manage the matched configurations, asking </span>
+<span class="sd">    to overwrite the first matching file or create</span>
+<span class="sd">    a new one with the given configuration ID.</span>
+
+<span class="sd">    :param matches: list of files matching the configuration.</span>
+<span class="sd">    :type matches: list(ConfMgr)</span>
+<span class="sd">    :param conf_id: proposed configuration ID.</span>
+<span class="sd">    :type conf_id: str</span>
+<span class="sd">    :returns: configuration ID.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
+
+        <span class="nb">print</span> <span class="s1">&#39;WARNING: Found {} file(s) with the same configuration&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+        
+        <span class="n">match_id</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">main_section_name</span><span class="p">(),</span> <span class="s1">&#39;confid&#39;</span><span class="p">)</span>
+        
+        <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">while</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;WARNING: Overwrite existing configuration file with ID &#39;</span>\
+                              <span class="s1">&#39;&quot;{}&quot;? (Y/[n]): &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">match_id</span><span class="p">)</span>
+                          <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;n&#39;</span>
+
+        <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="s1">&#39;Y&#39;</span><span class="p">:</span>
+            <span class="n">conf_id</span> <span class="o">=</span> <span class="n">match_id</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">while</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">):</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;WARNING: Do you want to create a new configuration file? (Y/[n]): &#39;</span><span class="p">)</span>
+                    
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="p">:</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="s1">&#39;n&#39;</span>
+            
+            <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span><span class="p">:</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">conf_id</span></div>
 </pre></div>
 
           </div>

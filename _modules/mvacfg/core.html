@@ -57,6 +57,7 @@
 
 <span class="c1"># confmgr</span>
 <span class="kn">import</span> <span class="nn">confmgr</span>
+<span class="kn">from</span> <span class="nn">confmgr</span> <span class="k">import</span> <span class="n">main_section_name</span>
 
 <span class="c1"># Scikit-learn</span>
 <span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
@@ -64,7 +65,6 @@
 <span class="c1"># Local</span>
 <span class="kn">import</span> <span class="nn">mvacfg._aux</span> <span class="k">as</span> <span class="nn">_aux</span>
 <span class="kn">import</span> <span class="nn">mvacfg.config</span> <span class="k">as</span> <span class="nn">config</span>
-<span class="kn">from</span> <span class="nn">mvacfg.config</span> <span class="k">import</span> <span class="n">__main_config_name__</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MVAmgr&#39;</span><span class="p">,</span> <span class="s1">&#39;KFoldMVAmgr&#39;</span><span class="p">,</span> <span class="s1">&#39;StdMVAmgr&#39;</span><span class="p">,</span> <span class="s1">&#39;manager_name&#39;</span><span class="p">,</span> <span class="s1">&#39;mva_study&#39;</span><span class="p">]</span>
@@ -493,7 +493,7 @@
             <span class="p">(</span><span class="s1">&#39;bkgname&#39;</span><span class="p">,</span> <span class="n">bkgname</span><span class="p">),</span>
             <span class="p">(</span><span class="s1">&#39;outdir&#39;</span> <span class="p">,</span> <span class="n">outdir</span><span class="p">)</span>
             <span class="p">):</span>
-        <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">confmgr</span><span class="o">.</span><span class="n">main_config_name</span><span class="p">(),</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">main_section_name</span><span class="p">(),</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
     
     <span class="c1"># Get the manager</span>
     <span class="n">mgr</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">processed_config</span><span class="p">()[</span><span class="n">__manager_name__</span><span class="p">]</span>
@@ -504,21 +504,22 @@
     
     <span class="c1"># Get the available configuration ID</span>
     <span class="n">cfglst</span>  <span class="o">=</span> <span class="n">confmgr</span><span class="o">.</span><span class="n">get_configurations</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">,</span> <span class="s1">&#39;mva_config&#39;</span><span class="p">)</span>
-    <span class="n">conf_id</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">available_configuration</span><span class="p">(</span><span class="n">flst</span><span class="p">)</span>
+    <span class="n">conf_id</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">available_configuration</span><span class="p">(</span><span class="n">cfglst</span><span class="p">)</span>
     
     <span class="c1"># Check if any other file is storing the same configuration</span>
     <span class="n">matches</span> <span class="o">=</span> <span class="n">confmgr</span><span class="o">.</span><span class="n">check_configurations</span><span class="p">(</span>
-        <span class="n">cfg</span><span class="p">,</span> <span class="n">cfglst</span><span class="p">,</span> <span class="p">{</span><span class="n">main_config_name</span><span class="p">():</span> <span class="p">[</span><span class="s1">&#39;funcfile&#39;</span><span class="p">,</span> <span class="s1">&#39;confid&#39;</span><span class="p">]}</span>
+        <span class="n">cfg</span><span class="p">,</span> <span class="n">cfglst</span><span class="p">,</span> <span class="p">{</span><span class="n">main_section_name</span><span class="p">():</span> <span class="p">[</span><span class="s1">&#39;funcfile&#39;</span><span class="p">,</span> <span class="s1">&#39;confid&#39;</span><span class="p">]}</span>
     <span class="p">)</span>
-    <span class="n">conf_id</span>  <span class="o">=</span> <span class="n">confmgr</span><span class="o">.</span><span class="n">manage_config_matches</span><span class="p">(</span><span class="n">matches</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
+    
+    <span class="n">conf_id</span>  <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">manage_config_matches</span><span class="p">(</span><span class="n">matches</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
     <span class="n">cfg_path</span> <span class="o">=</span> <span class="s1">&#39;{}/mva_config_{}.ini&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
     
     <span class="c1"># Save the configuration ID</span>
-    <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">main_config_name</span><span class="p">(),</span> <span class="s1">&#39;confid&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">conf_id</span><span class="p">))</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">main_section_name</span><span class="p">(),</span> <span class="s1">&#39;confid&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">conf_id</span><span class="p">))</span>
     
     <span class="c1"># Path to the file storing the MVA function</span>
     <span class="n">func_path</span> <span class="o">=</span> <span class="s1">&#39;{}/mva_func_{}.pkl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mva_dir</span><span class="p">,</span> <span class="n">conf_id</span><span class="p">)</span>
-    <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">main_config_name</span><span class="p">(),</span> <span class="s1">&#39;funcfile&#39;</span><span class="p">,</span> <span class="n">func_path</span><span class="p">)</span>
+    <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">main_section_name</span><span class="p">(),</span> <span class="s1">&#39;funcfile&#39;</span><span class="p">,</span> <span class="n">func_path</span><span class="p">)</span>
 
     <span class="c1"># Generating the INI file must be the last thing to do</span>
     <span class="n">cfg</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">)</span>
