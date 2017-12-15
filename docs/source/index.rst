@@ -15,8 +15,8 @@ modules of the mvacfg package.
    :maxdepth: 2
    
    config
+   core
    plot
-   utils
 
 Examples
 ========

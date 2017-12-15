@@ -1,7 +1,7 @@
-utils
-=====
+core
+====
 
-.. automodule:: mvacfg.utils
+.. automodule:: mvacfg.core
    :members:
    :undoc-members:
    :special-members:
