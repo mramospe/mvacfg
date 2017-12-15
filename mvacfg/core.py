@@ -15,6 +15,7 @@ from copy import deepcopy
 
 # confmgr
 import confmgr
+from confmgr import main_section_name
 
 # Scikit-learn
 from sklearn.model_selection import train_test_split
@@ -22,7 +23,6 @@ from sklearn.model_selection import train_test_split
 # Local
 import mvacfg._aux as _aux
 import mvacfg.config as config
-from mvacfg.config import __main_config_name__
 
 
 __all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'manager_name', 'mva_study']
@@ -451,7 +451,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
             ('bkgname', bkgname),
             ('outdir' , outdir)
             ):
-        cfg.set(confmgr.main_config_name(), k, v)
+        cfg.set(main_section_name(), k, v)
     
     # Get the manager
     mgr = cfg.processed_config()[__manager_name__]
@@ -462,21 +462,22 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     
     # Get the available configuration ID
     cfglst  = confmgr.get_configurations(mva_dir, 'mva_config')
-    conf_id = config.available_configuration(flst)
+    conf_id = config.available_configuration(cfglst)
     
     # Check if any other file is storing the same configuration
     matches = confmgr.check_configurations(
-        cfg, cfglst, {main_config_name(): ['funcfile', 'confid']}
+        cfg, cfglst, {main_section_name(): ['funcfile', 'confid']}
     )
-    conf_id  = confmgr.manage_config_matches(matches, conf_id)
+    
+    conf_id  = config.manage_config_matches(matches, conf_id)
     cfg_path = '{}/mva_config_{}.ini'.format(mva_dir, conf_id)
     
     # Save the configuration ID
-    cfg.set(main_config_name(), 'confid', str(conf_id))
+    cfg.set(main_section_name(), 'confid', str(conf_id))
     
     # Path to the file storing the MVA function
     func_path = '{}/mva_func_{}.pkl'.format(mva_dir, conf_id)
-    cfg.set(main_config_name(), 'funcfile', func_path)
+    cfg.set(main_section_name(), 'funcfile', func_path)
 
     # Generating the INI file must be the last thing to do
     cfg.save(cfg_path)

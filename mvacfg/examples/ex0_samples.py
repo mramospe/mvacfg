@@ -19,9 +19,11 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import datasets
 
+# confmgr
+from confmgr import Config
+
 # mvacfg
 import mvacfg
-from mvacfg import Configurable
 from mvacfg.core import __is_sig__, __mva_dec__
 
 
@@ -40,7 +42,7 @@ def main():
     bkg = data[dt.target == False]
     
     # Configurable of the base estimator
-    bes_cfg = Configurable(
+    bes_cfg = Config(
         DecisionTreeClassifier,
         {
         'criterion'         : 'gini',
@@ -54,7 +56,7 @@ def main():
         })
 
     # Configurable of the classifier estimator
-    class_cfg = Configurable(
+    class_cfg = Config(
         AdaBoostClassifier,
         { 'algorithm'     : 'SAMME',
           'base_estimator': bes_cfg,
@@ -64,12 +66,12 @@ def main():
         })
 
     # Configurables of the standard and k-folding methods
-    std_cfg = Configurable(
+    std_cfg = Config(
         mvacfg.StdMVAmgr,
         {'classifier' : class_cfg,
          'features'   : cols
         })
-    kfold_cfg = Configurable(
+    kfold_cfg = Config(
         mvacfg.KFoldMVAmgr,
         {'classifier' : class_cfg,
          'nfolds'     : 2,
