@@ -496,7 +496,7 @@
         <span class="n">cfg</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">main_section_name</span><span class="p">(),</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
     
     <span class="c1"># Get the manager</span>
-    <span class="n">mgr</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">processed_config</span><span class="p">()[</span><span class="n">__manager_name__</span><span class="p">]</span>
+    <span class="n">mgr</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">proc_conf</span><span class="p">()[</span><span class="n">__manager_name__</span><span class="p">]</span>
     
     <span class="c1"># Create the output directory</span>
     <span class="n">mva_dir</span> <span class="o">=</span> <span class="s1">&#39;{}/mva_configs_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
