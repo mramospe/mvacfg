@@ -43,7 +43,7 @@ def test_configmgr():
     # Build the configuration from the file and get the manager
     rcfg = ConfMgr.from_file(path)
     
-    mgr = rcfg.processed_config()[manager_name()]
+    mgr = rcfg.proc_conf()[manager_name()]
 
     os.remove(__fname__)
     

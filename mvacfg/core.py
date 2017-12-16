@@ -454,7 +454,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
         cfg.set(main_section_name(), k, v)
     
     # Get the manager
-    mgr = cfg.processed_config()[__manager_name__]
+    mgr = cfg.proc_conf()[__manager_name__]
     
     # Create the output directory
     mva_dir = '{}/mva_configs_{}'.format(outdir, name)
