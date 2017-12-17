@@ -8,3 +8,5 @@ Package to handle configurations for Multivariate Analysis
 - A function to train MVA methods, returning the training and testing samples, together with a class to apply the output algorithm in any sample.
 
 The format of the input samples are pandas.DataFrame objects.
+
+Find the full documentation for the package in the `GitHub Pages <https://mramospe.github.io/mvacfg/>`_.
