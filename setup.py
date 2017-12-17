@@ -36,9 +36,6 @@ setup(
     # Find all the packages in this directory
     packages = find_packages(),
 
-    # Install scripts
-    scripts = ['scripts/read_mva_configs'],
-
     # Requisites
     install_requires = ['confmgr', 'matplotlib', 'numpy', 'pytest', 'scikit-learn'],
 
