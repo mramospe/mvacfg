@@ -20,7 +20,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn import datasets
 
 # confmgr
-from confmgr import Config
+from confmgr import Config, ConfMgr
 
 # mvacfg
 import mvacfg
@@ -31,16 +31,16 @@ def main():
 
     # Load a sample
     dt = datasets.load_breast_cancer()
-    
+
     data = pandas.DataFrame(dt.data)
     cols = list(str(c) for c in data.columns)
     data.columns = cols
 
     data['evt'] = range(len(data))
-    
+
     sig = data[dt.target == True]
     bkg = data[dt.target == False]
-    
+
     # Configurable of the base estimator
     bes_cfg = Config(
         DecisionTreeClassifier,
@@ -66,19 +66,19 @@ def main():
         })
 
     # Configurables of the standard and k-folding methods
-    std_cfg = Config(
+    std_cfg = ConfMgr(manager = Config(
         mvacfg.StdMVAmgr,
         {'classifier' : class_cfg,
          'features'   : cols
-        })
-    kfold_cfg = Config(
+        }))
+    kfold_cfg = ConfMgr(manager = Config(
         mvacfg.KFoldMVAmgr,
         {'classifier' : class_cfg,
          'nfolds'     : 2,
          'features'   : cols,
          'splitvar'   : 'evt'
-        })
-    
+        }))
+
     # Do the study
     test_smps = odict()
     for name, cfg in [('std', std_cfg), ('kfold', kfold_cfg)]:
@@ -89,24 +89,24 @@ def main():
         plt.show()
 
         test_smps[name] = test
-        
+
     # Apply the two methods to the merged sample
     for name in ('std',  'kfold'):
         print '-- Apply MVA method "{}"'.format(name)
 
         d = 'mva_configs_{}'.format(name)
-        
+
         f = filter(lambda s: s.endswith('.pkl'), os.listdir(d))[0]
-        
+
         s = joblib.load(os.path.join(d, f))
-        
+
         s.apply(data, '{}_dec'.format(name), '{}_pred'.format(name))
 
     # Compare the two methods
     com = {'histtype': 'stepfilled', 'range': (-1, 1), 'alpha': 0.5}
 
     fig, (ax0, ax1) = plt.subplots(1, 2)
-    
+
     ax0.hist(data['std_dec'], color = 'b', label = 'std', **com)
     ax0.hist(data['kfold_dec'], color = 'r', label = 'kfold', **com)
     ax0.legend()
@@ -119,9 +119,9 @@ def main():
     ax1.legend()
     ax1.set_xlabel('background rejection')
     ax1.set_ylabel('signal efficiency')
-    
+
     plt.show()
-    
+
 
 if __name__ == '__main__':
     main()

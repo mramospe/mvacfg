@@ -54,12 +54,12 @@ def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 100 )
     '''
     bkg_train = train[train[is_sig] == False]['mva_dec']
     sig_train = train[train[is_sig] == True]['mva_dec']
-    
+
     bkg_test = test[test[is_sig] == False]['mva_dec']
     sig_test = test[test[is_sig] == True]['mva_dec']
 
     ss = (bkg_train, sig_train, bkg_test, sig_test)
-    
+
     if rg == None:
 
         mn = np.min([a.min() for a in ss])
@@ -68,11 +68,11 @@ def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 100 )
         rg = (mn, mx)
 
     hists = []
-    
+
     for s in ss:
         values, edges = np.histogram(s, bins = nbins, range = rg)
         hists.append(values)
-        
+
     return hists, edges
 
 
@@ -85,27 +85,27 @@ def plot_overtraining_hists( train, test, where = None, **kwargs ):
     '''
     if where is None:
         _, where = plt.subplots(1, 1)
-    
+
     (bkg_tr, sig_tr, bkg_te, sig_te), edges = overtraining_hists(train, test, **kwargs)
 
     centers = (edges[1:] + edges[:-1])/2.
-    
+
     xerr = (edges[1] - edges[0])/2.
 
     # Plot training histograms
     for s, c in ((bkg_tr, 'r'), (sig_tr, 'b')):
 
         wgts = s/float(np.sum(s))
-        
+
         where.hist(centers, edges, weights = wgts, histtype = 'stepfilled', color = c, alpha = 0.5)
-        
+
     # Plot testing histograms
     for s, c in ((bkg_te, 'r'), (sig_te, 'b')):
 
-        n    = float(np.sum(s))        
+        n    = float(np.sum(s))
         yerr = np.sqrt(s)/n
         yv   = s/n
-        
+
         where.errorbar(centers, yv, yerr, xerr, ls = 'none', c = c)
 
     where.set_xlabel('MVA decision')
@@ -113,7 +113,7 @@ def plot_overtraining_hists( train, test, where = None, **kwargs ):
 
 
 def ROC( sig_sta, mva_dec, **kwargs ):
-    '''  
+    '''
     Calculate ROC curve giving the signal status  and the MVA method decision.
 
     :param sig_sta: array with the signal status of "mva_dec". (True \
@@ -125,10 +125,10 @@ def ROC( sig_sta, mva_dec, **kwargs ):
     :type kwargs: dict
     :returns: background rejection and signal efficiency.
     :rtype: tuple(array-like, array-like)
-    
+
     .. seealso:: :func:`sklearn.metrics.roc_curve`
     '''
     bkg_eff, sig_eff, thresholds = roc_curve(sig_sta, mva_dec, **kwargs)
     bkg_rej = 1. - bkg_eff
-    
+
     return bkg_rej, sig_eff

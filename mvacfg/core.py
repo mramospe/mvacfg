@@ -15,7 +15,6 @@ from copy import deepcopy
 
 # confmgr
 import confmgr
-from confmgr import main_section_name
 
 # Scikit-learn
 from sklearn.model_selection import train_test_split
@@ -42,7 +41,7 @@ __manager_name__ = 'manager'
 def manager_name():
     '''
     Return the name of the manager in the configuration files.
-    
+
     :returns: name of the manager ("manager" by default).
     :rtype: str
     '''
@@ -281,11 +280,11 @@ class KFoldMVAmgr(MVAmgr):
             
             dm = dec_df.mean(axis = 1)
             pm = pred_df.mean(axis = 1)
-            
+
             # Study the deviation of the MVA values
             maximum = dec_df.subtract(dm, axis = 0).divide(
                 dm, axis = 0).abs().max(axis = 1)
-            
+
             nmax = len(maximum[maximum > 
                                KFoldMVAmgr.__min_tolerance__])
 
@@ -297,7 +296,7 @@ class KFoldMVAmgr(MVAmgr):
 
             sample[decname]  = dm
             sample[predname] = pm
-            
+
     def extravars( self ):
         '''
         See :meth:`MVAmgr.extravars`.
@@ -310,32 +309,32 @@ class KFoldMVAmgr(MVAmgr):
         '''
         train_dlst = []
         test_dlst  = []
-        
+
         mvas = []
         for i in xrange(self.nfolds):
-      
+
             print '--- Processing fold number {}'.format(i + 1)
-            
+
             print '---- Split signal sample'
             train_sig = self.train_sample(sig, i)
-                
+
             print '---- Split background sample'
             train_bkg = self.train_sample(bkg, i)
-            
+
             print '---- Merge training samples'
             train_data = pandas.concat([train_sig, train_bkg],
                                        ignore_index = True)
-            
+
             # The MVA must be a new instance of the classifier type
             mva = deepcopy(self._fit(train_data, is_sig))
-            
+
             mvas.append(mva)
-            
+
         train_data = pandas.concat([sig, bkg], ignore_index = True)
         test_data  = train_data.copy()
-        
+
         self.mvas = mvas
-        
+
         return train_data, test_data
 
     def test_sample( self, smp, i ):
@@ -383,14 +382,14 @@ class StdMVAmgr(MVAmgr):
     def apply( self, sample, decname = __mva_dec__, predname = __mva_pred__ ):
         '''
         Calculate the MVA method values for the given sample.
-        
+
         See :meth:`MVAmgr.apply`.
         '''
         smp = sample[self.features]
-      
+
         dec, pred = self._process(self.mva, smp)
-      
-        sample[decname]  = dec  
+
+        sample[decname]  = dec
         sample[predname] = pred
 
     def fit( self, sig, bkg, is_sig ):
@@ -403,13 +402,13 @@ class StdMVAmgr(MVAmgr):
         train_sig, test_sig = train_test_split(sig, random_state = 11, train_size = self.sigtrainfrac)
         print '---- Background train fraction: {}'.format(self.bkgtrainfrac)
         train_bkg, test_bkg = train_test_split(bkg, random_state = 11, train_size = self.bkgtrainfrac)
-      
+
         print '---- Merging training and test samples'
         train_data = pandas.concat([train_sig, train_bkg], ignore_index = True)
         test_data  = pandas.concat([test_sig, test_bkg], ignore_index = True)
-        
+
         self.mva = deepcopy(self._fit(train_data, is_sig))
-        
+
         return train_data, test_data
 
 
@@ -422,7 +421,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     ROC curve, another with the configuration used to run this
     function, and the last stores the proper class to store the
     MVA algorithm.
-    
+
     :param name: name of the study.
     :type name: str
     :param signame: signal sample name.
@@ -434,7 +433,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     :param bkgsmp: background sample.
     :type bkgsmp: pandas.DataFrame
     :param cfg: configurable for the MVA manager.
-    :type cfg: Configurable
+    :type cfg: ConfMgr or dict
     :param outdir: output directory.
     :type outdir: str
     :param is_sig: name for the additional column holding the \
@@ -443,52 +442,52 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     :returns: MVA manager, training and testing samples.
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
     '''
-    cfg = confmgr.ConfMgr.from_config(__manager_name__, cfg)
-    
+    cfg = confmgr.ConfMgr(cfg)
+
     # Get the raw configuration from the inputs
     for k, v in (
             ('signame', signame),
             ('bkgname', bkgname),
             ('outdir' , outdir)
             ):
-        cfg.set(main_section_name(), k, v)
-    
+        cfg[k] = v
+
     # Get the manager
     mgr = cfg.proc_conf()[__manager_name__]
-    
+
     # Create the output directory
     mva_dir = '{}/mva_configs_{}'.format(outdir, name)
     _aux._makedirs(mva_dir)
-    
+
     # Get the available configuration ID
     cfglst  = confmgr.get_configurations(mva_dir, 'mva_config')
     conf_id = config.available_configuration(cfglst)
-    
+
     # Check if any other file is storing the same configuration
     matches = confmgr.check_configurations(
-        cfg, cfglst, {main_section_name(): ['funcfile', 'confid']}
+        cfg, cfglst, {'funcfile': None, 'confid': None}
     )
-    
+
     conf_id  = config.manage_config_matches(matches, conf_id)
-    cfg_path = '{}/mva_config_{}.ini'.format(mva_dir, conf_id)
-    
+    cfg_path = '{}/mva_config_{}.xml'.format(mva_dir, conf_id)
+
     # Save the configuration ID
-    cfg.set(main_section_name(), 'confid', str(conf_id))
-    
+    cfg['confid'] = str(conf_id)
+
     # Path to the file storing the MVA function
     func_path = '{}/mva_func_{}.pkl'.format(mva_dir, conf_id)
-    cfg.set(main_section_name(), 'funcfile', func_path)
+    cfg['funcfile'] = func_path
 
-    # Generating the INI file must be the last thing to do
+    # Generating the XML file must be the last thing to do
     cfg.save(cfg_path)
-    
+
     # Display the configuration to run
     print '*************************'
     print '*** MVA configuration ***'
     print '*************************'
     print cfg
     print '*************************'
-    
+
     # Add the signal flag
     print '-- Adding the signal flag'
 
@@ -497,19 +496,19 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
 
     bkgsmp = bkgsmp.copy()
     bkgsmp[is_sig] = False
-    
+
     # Train the MVA method
     print '-- Initialize training'
     train, test = mgr.fit(sigsmp, bkgsmp, is_sig)
-    
+
     # Save the output method(s)
     mgr.save(func_path)
-    
+
     # Apply the MVA method
     print '-- Apply the trained MVA algorithm'
     for tp, smp in (('train', train), ('test', test)):
         mgr.apply_for_overtraining(tp, smp)
-        
+
     print '-- Process finished!'
-    
+
     return mgr, train, test

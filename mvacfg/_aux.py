@@ -16,7 +16,7 @@ __all__ = []
 def _makedirs( path ):
     '''
     Check if the path exists and makes the directory if not.
-    
+
     :param path: input path.
     :type path: str
     '''
