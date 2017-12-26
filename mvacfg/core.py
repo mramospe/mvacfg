@@ -65,14 +65,14 @@ class MVAmgr:
     def _fit( self, train_data, is_sig ):
         '''
         Fit the MVA classifier to the given samples.
-        
+
         :param train_data: training data.
         :type train_data: pandas.DataFrame
         :param is_sig: flag to determine the signal condition.
         :type is_sig: str
         :returns: trained MVA classifier.
         :rtype: MVA classifier
-        '''        
+        '''
         print '---- Perform MVA training'
         mva = self.classifier.fit(train_data[self.features],
                                   train_data[is_sig])
@@ -83,7 +83,7 @@ class MVAmgr:
         '''
         Apply the given MVA algorithm to the given sample. The
         result is a new DataFrame with the indices being preserved.
-        
+
         :param mva: processed MVA classifier.
         :type mva: MVA classifier
         :param smp: sample to process.
@@ -118,12 +118,12 @@ class MVAmgr:
 
         :param dt: type of the input sample.
         :type dt: str ('train' or 'test')
-        
+
         .. seealso:: :meth:`MVAmgr.apply`.
         '''
         if dt not in ('train', 'test'):
             raise 'ERROR: Unknown data type "{}"'.format(dt)
-        
+
         return self.apply(sample, decname, predname)
 
     def extravars( self ):
@@ -147,7 +147,7 @@ class MVAmgr:
         :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
         '''
         raise NotImplementedError('Attempt to call abstract method')
-    
+
     def save( self, path ):
         '''
         Save this MVA manager to a file.
@@ -180,10 +180,10 @@ class KFoldMVAmgr(MVAmgr):
         :type nfolds: int
         '''
         MVAmgr.__init__(self, classifier, features)
-        
+
         if nfolds <= 1:
             raise 'ERROR: Number of folds must be greater than one'
-        
+
         self.nfolds   = nfolds
         self.splitvar = splitvar
 
@@ -224,18 +224,18 @@ class KFoldMVAmgr(MVAmgr):
         '''
         decs  = []
         preds = []
-        
+
         smp = sample[self.features + self.extravars()]
-        
+
         for i, mva in enumerate(self.mvas):
-            
+
             s = smp[self._true_cond(smp, i)][self.features]
-            
+
             d, p = self._process(mva, s)
-      
+
             decs.append(d)
             preds.append(p)
-      
+
         sample[decname]  = pandas.concat(decs)
         sample[predname] = pandas.concat(preds)
 
@@ -245,10 +245,10 @@ class KFoldMVAmgr(MVAmgr):
 
         See :meth:`MVAmgr.apply_for_overtraining`.
         '''
-        
+
         if dt not in ('train', 'test'):
             raise 'ERROR: Unknown data type "{}"'.format(dt)
-      
+
         if dt == 'test':
             self.apply(sample, decname, predname)
         else:
@@ -263,11 +263,11 @@ class KFoldMVAmgr(MVAmgr):
             for i, mva in enumerate(self.mvas):
 
                 print '---- Processing MVA number {}'.format(i)
-                
+
                 s = smp[self._false_cond(smp, i)][self.features]
-                
+
                 d, p = self._process(mva, s)
-                
+
                 # In the cells corresponding to the test values,
                 # it is being filled with NaN. By default the
                 # mean is calculated skipping these numbers.
@@ -275,9 +275,9 @@ class KFoldMVAmgr(MVAmgr):
                     [dec_df, d], axis = 1, ignore_index = True)
                 pred_df = pandas.concat(
                     [pred_df, p], axis = 1, ignore_index = True)
-                
+
             print '---- Calculating mean of BDT values'
-            
+
             dm = dec_df.mean(axis = 1)
             pm = pred_df.mean(axis = 1)
 
@@ -285,7 +285,7 @@ class KFoldMVAmgr(MVAmgr):
             maximum = dec_df.subtract(dm, axis = 0).divide(
                 dm, axis = 0).abs().max(axis = 1)
 
-            nmax = len(maximum[maximum > 
+            nmax = len(maximum[maximum >
                                KFoldMVAmgr.__min_tolerance__])
 
             if nmax > 1:
