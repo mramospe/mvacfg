@@ -19,17 +19,17 @@ version_info = (0, 0, 0)
 version = '.'.join(map(str, version_info))
 
 # Setup function
-setup( 
-    
+setup(
+
     name = 'mvacfg',
-    
+
     version = version,
-    
+
     description = 'Package to track MVA configurations using scikit-learn',
-    
+
     # Read the long description from the README
     long_description = open('README.rst').readlines(),
-    
+
     # Keywords to search for the package
     keywords = 'mva bdt hep',
 
@@ -41,7 +41,7 @@ setup(
 
     # Test requirements
     setup_requires = ['pytest-runner'],
-    
+
     tests_require = ['pytest'],
     )
 
