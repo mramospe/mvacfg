@@ -30,11 +30,11 @@ def test_configmgr():
     # Generate a fake manager and save its configuration
     base = Config(DecisionTreeClassifier)
 
-    clss = Config(AdaBoostClassifier, {'base_estimator': base})
+    clss = Config(AdaBoostClassifier, base_estimator = base)
 
-    mgr = Config(StdMVAmgr, {'classifier': clss, 'features'  : ['A', 'B', 'C']})
+    mgr = Config(StdMVAmgr, classifier = clss, features = ['A', 'B', 'C'])
 
-    cfg = ConfMgr({manager_name(): mgr})
+    cfg = ConfMgr(**{manager_name(): mgr})
 
     path = './' + __fname__
 

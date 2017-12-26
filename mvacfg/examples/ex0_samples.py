@@ -44,40 +44,39 @@ def main():
     # Configurable of the base estimator
     bes_cfg = Config(
         DecisionTreeClassifier,
-        {
-        'criterion'         : 'gini',
-        'max_depth'         : 20,
-        'max_features'      : None,
-        'max_leaf_nodes'    : None,
-        'min_samples_leaf'  : 0.01,
-        'min_samples_split' : 2,
-        'random_state'      : None,
-        'splitter'          : 'best'
-        })
+        criterion         = 'gini',
+        max_depth         = 20,
+        max_features      = None,
+        max_leaf_nodes    = None,
+        min_samples_leaf  = 0.01,
+        min_samples_split = 2,
+        random_state      = None,
+        splitter          = 'best'
+        )
 
     # Configurable of the classifier estimator
     class_cfg = Config(
         AdaBoostClassifier,
-        { 'algorithm'     : 'SAMME',
-          'base_estimator': bes_cfg,
-          'learning_rate' : 0.25,
-          'n_estimators'  : 27,
-          'random_state'  : None,
-        })
+        algorithm      = 'SAMME',
+        base_estimator = bes_cfg,
+        learning_rate  = 0.25,
+        n_estimators   = 27,
+        random_state   = None,
+        )
 
     # Configurables of the standard and k-folding methods
     std_cfg = ConfMgr(manager = Config(
         mvacfg.StdMVAmgr,
-        {'classifier' : class_cfg,
-         'features'   : cols
-        }))
+        classifier = class_cfg,
+        features   = cols
+        ))
     kfold_cfg = ConfMgr(manager = Config(
         mvacfg.KFoldMVAmgr,
-        {'classifier' : class_cfg,
-         'nfolds'     : 2,
-         'features'   : cols,
-         'splitvar'   : 'evt'
-        }))
+        classifier = class_cfg,
+        nfolds     = 2,
+        features   = cols,
+        splitvar   = 'evt'
+        ))
 
     # Do the study
     test_smps = odict()
