@@ -28,6 +28,7 @@
 # Temporal files #
 *#
 *~
+*.cache
 
 # Logs and databases #
 ######################
@@ -48,6 +49,12 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# PIP installation files #
+##########################
+.eggs/
+mvacfg.egg-info/
+mvacfg/version.py
 
 # Other files #
 *.txt
