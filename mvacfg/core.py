@@ -442,7 +442,7 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     :returns: MVA manager, training and testing samples.
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
     '''
-    cfg = confmgr.ConfMgr(cfg)
+    cfg = confmgr.ConfMgr(**{__manager_name__ : cfg})
 
     # Get the raw configuration from the inputs
     for k, v in (
