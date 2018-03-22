@@ -55,6 +55,7 @@ Thumbs.db
 .eggs/
 mvacfg.egg-info/
 mvacfg/version.py
+.pytest_cache
 
 # Other files #
 *.txt

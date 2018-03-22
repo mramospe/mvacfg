@@ -37,7 +37,7 @@ setup(
     packages = find_packages(),
 
     # Requisites
-    install_requires = ['confmgr', 'matplotlib', 'numpy', 'pytest', 'scikit-learn'],
+    install_requires = ['confmgr', 'joblib', 'matplotlib', 'numpy', 'pandas', 'pytest', 'scikit-learn'],
 
     # Test requirements
     setup_requires = ['pytest-runner'],

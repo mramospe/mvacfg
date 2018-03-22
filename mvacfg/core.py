@@ -10,6 +10,7 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 # Python
 import importlib, inspect, joblib, os, pandas
 import numpy as np
+import warnings
 from collections import OrderedDict as odict
 from copy import deepcopy
 
@@ -73,10 +74,10 @@ class MVAmgr:
         :returns: trained MVA classifier.
         :rtype: MVA classifier
         '''
-        print '---- Perform MVA training'
+        print('---- Perform MVA training')
         mva = self.classifier.fit(train_data[self.features],
                                   train_data[is_sig])
-        print '---- MVA training finished'
+        print('---- MVA training finished')
         return mva
 
     def _process( self, mva, smp ):
@@ -122,7 +123,7 @@ class MVAmgr:
         .. seealso:: :meth:`MVAmgr.apply`.
         '''
         if dt not in ('train', 'test'):
-            raise 'ERROR: Unknown data type "{}"'.format(dt)
+            raise RuntimeError('Unknown data type "{}"'.format(dt))
 
         return self.apply(sample, decname, predname)
 
@@ -156,7 +157,7 @@ class MVAmgr:
         :type path: str
         '''
         joblib.dump(self, path, compress = True)
-        print '-- Output method saved in {}'.format(path)
+        print('-- Output method saved in {}'.format(path))
 
 
 class KFoldMVAmgr(MVAmgr):
@@ -182,13 +183,13 @@ class KFoldMVAmgr(MVAmgr):
         MVAmgr.__init__(self, classifier, features)
 
         if nfolds <= 1:
-            raise 'ERROR: Number of folds must be greater than one'
+            raise RuntimeError('Number of folds must be greater than one')
 
         self.nfolds   = nfolds
         self.splitvar = splitvar
 
-        print '-- Prepare {} folds using variable '\
-            '"{}"'.format(nfolds, splitvar)
+        print('-- Prepare {} folds using variable '\
+            '"{}"'.format(nfolds, splitvar))
 
     def _false_cond( self, smp, i ):
         '''
@@ -247,7 +248,7 @@ class KFoldMVAmgr(MVAmgr):
         '''
 
         if dt not in ('train', 'test'):
-            raise 'ERROR: Unknown data type "{}"'.format(dt)
+            raise RuntimeError('Unknown data type "{}"'.format(dt))
 
         if dt == 'test':
             self.apply(sample, decname, predname)
@@ -255,14 +256,14 @@ class KFoldMVAmgr(MVAmgr):
             dec_df  = pandas.DataFrame()
             pred_df = pandas.DataFrame()
 
-            print '-- Processing a training sample, this may '\
-                'take a while'
+            print('-- Processing a training sample, this may '\
+                'take a while')
 
             smp = sample[self.features + self.extravars()]
 
             for i, mva in enumerate(self.mvas):
 
-                print '---- Processing MVA number {}'.format(i)
+                print('---- Processing MVA number {}'.format(i))
 
                 s = smp[self._false_cond(smp, i)][self.features]
 
@@ -276,7 +277,7 @@ class KFoldMVAmgr(MVAmgr):
                 pred_df = pandas.concat(
                     [pred_df, p], axis = 1, ignore_index = True)
 
-            print '---- Calculating mean of BDT values'
+            print('---- Calculating mean of BDT values')
 
             dm = dec_df.mean(axis = 1)
             pm = pred_df.mean(axis = 1)
@@ -289,10 +290,10 @@ class KFoldMVAmgr(MVAmgr):
                                KFoldMVAmgr.__min_tolerance__])
 
             if nmax > 1:
-                print 'WARNING: Found {} points (out of {}) with '\
+                warnings.warn('Found {} points (out of {}) with '\
                     'a deviation on the MVA value greater than {} '\
                     '%'.format(nmax, len(sample),
-                               KFoldMVAmgr.__min_tolerance__*100)
+                               KFoldMVAmgr.__min_tolerance__*100))
 
             sample[decname]  = dm
             sample[predname] = pm
@@ -313,15 +314,15 @@ class KFoldMVAmgr(MVAmgr):
         mvas = []
         for i in xrange(self.nfolds):
 
-            print '--- Processing fold number {}'.format(i + 1)
+            print('--- Processing fold number {}'.format(i + 1))
 
-            print '---- Split signal sample'
+            print('---- Split signal sample')
             train_sig = self.train_sample(sig, i)
 
-            print '---- Split background sample'
+            print('---- Split background sample')
             train_bkg = self.train_sample(bkg, i)
 
-            print '---- Merge training samples'
+            print('---- Merge training samples')
             train_data = pandas.concat([train_sig, train_bkg],
                                        ignore_index = True)
 
@@ -396,14 +397,14 @@ class StdMVAmgr(MVAmgr):
         '''
         See :meth:`MVAmgr.fit`.
         '''
-        print '---- Divide data in train and test samples'
+        print('---- Divide data in train and test samples')
 
-        print '---- Signal train fraction: {}'.format(self.sigtrainfrac)
+        print('---- Signal train fraction: {}'.format(self.sigtrainfrac))
         train_sig, test_sig = train_test_split(sig, random_state = 11, train_size = self.sigtrainfrac)
-        print '---- Background train fraction: {}'.format(self.bkgtrainfrac)
+        print('---- Background train fraction: {}'.format(self.bkgtrainfrac))
         train_bkg, test_bkg = train_test_split(bkg, random_state = 11, train_size = self.bkgtrainfrac)
 
-        print '---- Merging training and test samples'
+        print('---- Merging training and test samples')
         train_data = pandas.concat([train_sig, train_bkg], ignore_index = True)
         test_data  = pandas.concat([test_sig, test_bkg], ignore_index = True)
 
@@ -482,14 +483,14 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     cfg.save(cfg_path)
 
     # Display the configuration to run
-    print '*************************'
-    print '*** MVA configuration ***'
-    print '*************************'
-    print cfg
-    print '*************************'
+    print('*************************')
+    print('*** MVA configuration ***')
+    print('*************************')
+    print(cfg)
+    print('*************************')
 
     # Add the signal flag
-    print '-- Adding the signal flag'
+    print('-- Adding the signal flag')
 
     sigsmp = sigsmp.copy()
     sigsmp[is_sig] = True
@@ -498,17 +499,17 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     bkgsmp[is_sig] = False
 
     # Train the MVA method
-    print '-- Initialize training'
+    print('-- Initialize training')
     train, test = mgr.fit(sigsmp, bkgsmp, is_sig)
 
     # Save the output method(s)
     mgr.save(func_path)
 
     # Apply the MVA method
-    print '-- Apply the trained MVA algorithm'
+    print('-- Apply the trained MVA algorithm')
     for tp, smp in (('train', train), ('test', test)):
         mgr.apply_for_overtraining(tp, smp)
 
-    print '-- Process finished!'
+    print('-- Process finished!')
 
     return mgr, train, test

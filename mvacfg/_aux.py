@@ -22,6 +22,6 @@ def _makedirs( path ):
     '''
     try:
         os.makedirs(path)
-        print 'INFO: Creating output directory "{}"'.format(path)
+        print('INFO: Creating output directory "{}"'.format(path))
     except:
         pass

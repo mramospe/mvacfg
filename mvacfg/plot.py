@@ -10,6 +10,7 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
+import warnings
 
 # Scikit learn
 from sklearn.metrics import roc_curve
@@ -35,8 +36,8 @@ def ks_test( mva_dec_A, mva_dec_B, maxpv ):
     ks_stat, pvalue = st.ks_2samp(np.sort(mva_dec_A),
                                   np.sort(mva_dec_B))
     if pvalue > maxpv:
-        print 'WARNING: Kolmogorov-Smirnov test rejects the '\
-            'null hypothesis (p-value = {:.4f})'.format(pvalue)
+        warnings.warn('Kolmogorov-Smirnov test rejects the '\
+            'null hypothesis (p-value = {:.4f})'.format(pvalue))
 
     return ks_stat, pvalue
 

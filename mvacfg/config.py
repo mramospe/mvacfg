@@ -46,8 +46,8 @@ def manage_config_matches( matches, conf_id ):
     '''
     if matches:
 
-        print 'WARNING: Found {} file(s) with the same '\
-            'configuration'.format(len(matches))
+        print('WARNING: Found {} file(s) with the same '\
+            'configuration'.format(len(matches)))
 
         match_id = matches[-1]['confid']
 
