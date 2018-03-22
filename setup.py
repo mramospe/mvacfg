@@ -28,7 +28,7 @@ setup(
     description = 'Package to track MVA configurations using scikit-learn',
 
     # Read the long description from the README
-    long_description = open('README.rst').readlines(),
+    long_description = open('README.rst').read(),
 
     # Keywords to search for the package
     keywords = 'mva bdt hep',

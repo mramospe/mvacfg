@@ -41,7 +41,7 @@ def ks_test( mva_dec_A, mva_dec_B, maxpv ):
     return ks_stat, pvalue
 
 
-def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 100 ):
+def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 20 ):
     '''
     Make the overtraining histograms from the training and
     testing samples. To make these histograms and plot the
