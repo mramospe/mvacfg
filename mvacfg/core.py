@@ -8,7 +8,7 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
-import importlib, inspect, joblib, os, pandas
+import importlib, inspect, joblib, logging, os, pandas
 import numpy as np
 import warnings
 from collections import OrderedDict as odict
@@ -32,11 +32,25 @@ __all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'manager_name', 'mva_study']
 __mva_dec__  = 'mva_dec'
 __mva_pred__ = 'mva_pred'
 
-# Global name for the signal flag
-__is_sig__ = 'is_sig'
+# Global names for the signal flags
+__is_sig__   = 'is_sig'
+__sig_flag__ = 1
+__bkg_flag__ = 0
 
 # Manager section name in the configuration file
 __manager_name__ = 'manager'
+
+
+def info( msg, indent = 0 ):
+    '''
+    Display an information message taking into account a indentation level.
+
+    :param msg: message to display.
+    :type msg: str
+    :param indent: indentation level.
+    :type indent: int
+    '''
+    logging.getLogger(__name__).info('{:>{}}'.format(msg, indent + len(msg)))
 
 
 def manager_name():
@@ -74,10 +88,10 @@ class MVAmgr:
         :returns: trained MVA classifier.
         :rtype: MVA classifier
         '''
-        print('---- Perform MVA training')
+        info('Perform MVA training')
         mva = self.classifier.fit(train_data[self.features],
                                   train_data[is_sig])
-        print('---- MVA training finished')
+        info('MVA training finished')
         return mva
 
     def _process( self, mva, smp ):
@@ -92,10 +106,16 @@ class MVAmgr:
         :returns: decision and prediction of the MVA response.
         :rtype: tuple(array-like, array-like)
         '''
-        dec  = pandas.DataFrame(mva.decision_function(smp),
-                                index = smp.index)
+
+        # This returns a DataFrame with two columns, representing
+        # the probability to belong to background or signal
+        # hypotheses. We keep only the second.
+        dec = pandas.DataFrame(mva.predict_proba(smp),
+                               index=smp.index)[[__sig_flag__]]
+
         pred = pandas.DataFrame(mva.predict(smp),
-                                index = smp.index)
+                                index=smp.index)
+
         return dec, pred
 
     def apply( self, sample, decname, predname ):
@@ -156,8 +176,8 @@ class MVAmgr:
         :param path: path to the output file.
         :type path: str
         '''
-        joblib.dump(self, path, compress = True)
-        print('-- Output method saved in {}'.format(path))
+        joblib.dump(self, path, compress=True)
+        info('Output method saved in {}'.format(path))
 
 
 class KFoldMVAmgr(MVAmgr):
@@ -188,7 +208,7 @@ class KFoldMVAmgr(MVAmgr):
         self.nfolds   = nfolds
         self.splitvar = splitvar
 
-        print('-- Prepare {} folds using variable '\
+        info('Prepare {} folds using variable '\
             '"{}"'.format(nfolds, splitvar))
 
     def _false_cond( self, smp, i ):
@@ -246,7 +266,6 @@ class KFoldMVAmgr(MVAmgr):
 
         See :meth:`MVAmgr.apply_for_overtraining`.
         '''
-
         if dt not in ('train', 'test'):
             raise RuntimeError('Unknown data type "{}"'.format(dt))
 
@@ -256,14 +275,14 @@ class KFoldMVAmgr(MVAmgr):
             dec_df  = pandas.DataFrame()
             pred_df = pandas.DataFrame()
 
-            print('-- Processing a training sample, this may '\
+            info('Processing a training sample, this may '\
                 'take a while')
 
             smp = sample[self.features + self.extravars()]
 
             for i, mva in enumerate(self.mvas):
 
-                print('---- Processing MVA number {}'.format(i))
+                info('Processing MVA number {}'.format(i), indent=1)
 
                 s = smp[self._false_cond(smp, i)][self.features]
 
@@ -273,18 +292,18 @@ class KFoldMVAmgr(MVAmgr):
                 # it is being filled with NaN. By default the
                 # mean is calculated skipping these numbers.
                 dec_df  = pandas.concat(
-                    [dec_df, d], axis = 1, ignore_index = True)
+                    [dec_df, d], axis=1, ignore_index=True)
                 pred_df = pandas.concat(
-                    [pred_df, p], axis = 1, ignore_index = True)
+                    [pred_df, p], axis=1, ignore_index=True)
 
-            print('---- Calculating mean of BDT values')
+            info('Calculating mean of BDT values')
 
-            dm = dec_df.mean(axis = 1)
-            pm = pred_df.mean(axis = 1)
+            dm = dec_df.mean(axis=1)
+            pm = pred_df.mean(axis=1)
 
             # Study the deviation of the MVA values
-            maximum = dec_df.subtract(dm, axis = 0).divide(
-                dm, axis = 0).abs().max(axis = 1)
+            maximum = dec_df.subtract(dm, axis=0).divide(
+                dm, axis = 0).abs().max(axis=1)
 
             nmax = len(maximum[maximum >
                                KFoldMVAmgr.__min_tolerance__])
@@ -312,26 +331,26 @@ class KFoldMVAmgr(MVAmgr):
         test_dlst  = []
 
         mvas = []
-        for i in xrange(self.nfolds):
+        for i in range(self.nfolds):
 
-            print('--- Processing fold number {}'.format(i + 1))
+            info('Processing fold number {}'.format(i + 1), indent=1)
 
-            print('---- Split signal sample')
+            info('Split signal sample', indent=2)
             train_sig = self.train_sample(sig, i)
 
-            print('---- Split background sample')
+            info('Split background sample', indent=2)
             train_bkg = self.train_sample(bkg, i)
 
-            print('---- Merge training samples')
+            info('Merge training samples', indent=2)
             train_data = pandas.concat([train_sig, train_bkg],
-                                       ignore_index = True)
+                                       ignore_index=True)
 
             # The MVA must be a new instance of the classifier type
             mva = deepcopy(self._fit(train_data, is_sig))
 
             mvas.append(mva)
 
-        train_data = pandas.concat([sig, bkg], ignore_index = True)
+        train_data = pandas.concat([sig, bkg], ignore_index=True)
         test_data  = train_data.copy()
 
         self.mvas = mvas
@@ -397,16 +416,16 @@ class StdMVAmgr(MVAmgr):
         '''
         See :meth:`MVAmgr.fit`.
         '''
-        print('---- Divide data in train and test samples')
+        info('Divide data in train and test samples')
 
-        print('---- Signal train fraction: {}'.format(self.sigtrainfrac))
-        train_sig, test_sig = train_test_split(sig, random_state = 11, train_size = self.sigtrainfrac)
-        print('---- Background train fraction: {}'.format(self.bkgtrainfrac))
-        train_bkg, test_bkg = train_test_split(bkg, random_state = 11, train_size = self.bkgtrainfrac)
+        info('Signal train fraction: {}'.format(self.sigtrainfrac), indent=1)
+        train_sig, test_sig = train_test_split(sig, train_size=self.sigtrainfrac)
+        info('Background train fraction: {}'.format(self.bkgtrainfrac), indent=1)
+        train_bkg, test_bkg = train_test_split(bkg, train_size=self.bkgtrainfrac)
 
-        print('---- Merging training and test samples')
-        train_data = pandas.concat([train_sig, train_bkg], ignore_index = True)
-        test_data  = pandas.concat([test_sig, test_bkg], ignore_index = True)
+        info('Merging training and test samples')
+        train_data = pandas.concat([train_sig, train_bkg], ignore_index=True)
+        test_data  = pandas.concat([test_sig, test_bkg], ignore_index=True)
 
         self.mva = deepcopy(self._fit(train_data, is_sig))
 
@@ -440,8 +459,8 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     :param is_sig: name for the additional column holding the \
     signal condition.
     :type is_sig: str
-    :returns: MVA manager, training and testing samples.
-    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame)
+    :returns: MVA manager, training and testing samples and the configuration ID.
+    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame, int)
     '''
     cfg = confmgr.ConfMgr(**{__manager_name__ : cfg})
 
@@ -490,26 +509,26 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     print('*************************')
 
     # Add the signal flag
-    print('-- Adding the signal flag')
+    info('Adding the signal flag')
 
     sigsmp = sigsmp.copy()
-    sigsmp[is_sig] = True
+    sigsmp[is_sig] = __sig_flag__
 
     bkgsmp = bkgsmp.copy()
-    bkgsmp[is_sig] = False
+    bkgsmp[is_sig] = __bkg_flag__
 
     # Train the MVA method
-    print('-- Initialize training')
+    info('Initialize training')
     train, test = mgr.fit(sigsmp, bkgsmp, is_sig)
 
     # Save the output method(s)
     mgr.save(func_path)
 
     # Apply the MVA method
-    print('-- Apply the trained MVA algorithm')
+    info('Apply the trained MVA algorithm')
     for tp, smp in (('train', train), ('test', test)):
         mgr.apply_for_overtraining(tp, smp)
 
-    print('-- Process finished!')
+    info('Process finished!')
 
-    return mgr, train, test
+    return mgr, train, test, conf_id

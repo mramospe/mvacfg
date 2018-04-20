@@ -53,10 +53,10 @@ def manage_config_matches( matches, conf_id ):
 
         d = ''
         while d not in ('Y', 'n'):
-            d = raw_input('WARNING: Overwrite existing '\
+            d = input('WARNING: Overwrite existing '\
                           'configuration file with ID '\
                           '"{}"? (Y/[n]): '.format(match_id)
-                          ).strip()
+                      ).strip()
             if not d:
                 d = 'n'
 
@@ -66,7 +66,7 @@ def manage_config_matches( matches, conf_id ):
         else:
             d = ''
             while d not in ('Y', 'n'):
-                d = raw_input('WARNING: Do you want to create a '\
+                d = input('WARNING: Do you want to create a '\
                               'new configuration file? (Y/[n]): ')
 
                 if not d:
