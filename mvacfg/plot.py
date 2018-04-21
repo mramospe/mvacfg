@@ -42,7 +42,7 @@ def ks_test( mva_proba_A, mva_proba_B, maxpv ):
     return ks_stat, pvalue
 
 
-def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 20 ):
+def overtraining_hists( train, test, is_sig = 'is_sig', bins = 20 ):
     '''
     Make the overtraining histograms from the training and
     testing samples. To make these histograms and plot the
@@ -61,17 +61,10 @@ def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 20 ):
 
     ss = (bkg_train, sig_train, bkg_test, sig_test)
 
-    if rg == None:
-
-        mn = np.min([a.min() for a in ss])
-        mx = np.max([a.max() for a in ss])
-        mx = np.nextafter(mx, 2.*mx)
-        rg = (mn, mx)
-
     hists = []
 
     for s in ss:
-        values, edges = np.histogram(s, bins = nbins, range = rg)
+        values, edges = np.histogram(s, bins=bins, range=(0, 1))
         hists.append(values)
 
     return hists, edges
