@@ -208,9 +208,6 @@ class KFoldMVAmgr(MVAmgr):
         self.nfolds   = nfolds
         self.splitvar = splitvar
 
-        info('Prepare {} folds using variable '\
-            '"{}"'.format(nfolds, splitvar))
-
     def _false_cond( self, smp, i ):
         '''
         Condition to be satisfied by the training sample
@@ -432,9 +429,10 @@ class StdMVAmgr(MVAmgr):
         return train_data, test_data
 
 
-def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
-               outdir = '.',
-               is_sig = __is_sig__ ):
+def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
+               outdir = 'mva_outputs',
+               is_sig = __is_sig__,
+               raise_if_matches = False):
     '''
     Main function to perform a MVA study. The results are stored
     in three different files: one storing the histograms and the
@@ -442,8 +440,6 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     function, and the last stores the proper class to store the
     MVA algorithm.
 
-    :param name: name of the study.
-    :type name: str
     :param signame: signal sample name.
     :type signame: str
     :param sigsmp: signal sample.
@@ -454,13 +450,24 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     :type bkgsmp: pandas.DataFrame
     :param cfg: configurable for the MVA manager.
     :type cfg: ConfMgr or dict
-    :param outdir: output directory.
+    :param outdir: output directory. By default is set to "mva_outputs". \
+    The full output directory is actually determined from the configuration \
+    ID of the study so, assuming the default value, it would be under \
+    "mva_outputs/mva_<configuration ID>".
     :type outdir: str
     :param is_sig: name for the additional column holding the \
     signal condition.
     :type is_sig: str
-    :returns: MVA manager, training and testing samples and the configuration ID.
-    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame, int)
+    :param raise_if_matches: if set to True, a LookupError will be raised \
+    if it is found a configuration matching the input. This is useful when \
+    running many configurations. For example, if one wants to skip those \
+    which have already been studied.
+    :type raise_if_matches: bool
+    :returns: MVA manager, training and testing samples and the path where
+    the output is saved.
+    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame, str)
+    :raises LookupError: if "raise_if_matches = True", and a configuration \
+    matching the input is found.
     '''
     cfg = confmgr.ConfMgr(**{__manager_name__ : cfg})
 
@@ -475,12 +482,8 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
     # Get the manager
     mgr = cfg.proc_conf()[__manager_name__]
 
-    # Create the output directory
-    mva_dir = '{}/mva_configs_{}'.format(outdir, name)
-    _aux._makedirs(mva_dir)
-
     # Get the available configuration ID
-    cfglst  = confmgr.get_configurations(mva_dir, 'mva_config')
+    cfglst  = confmgr.get_configurations(outdir, 'mva_.*/config.xml$')
     conf_id = config.available_configuration(cfglst)
 
     # Check if any other file is storing the same configuration
@@ -488,25 +491,42 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
         cfg, cfglst, {'funcfile': None, 'confid': None}
     )
 
-    conf_id  = config.manage_config_matches(matches, conf_id)
-    cfg_path = '{}/mva_config_{}.xml'.format(mva_dir, conf_id)
+    # Raise an exception if one wants to skip the matched
+    # configurations
+    if len(matches) != 0:
+        if raise_if_matches:
+            logging.getLogger(__name__).warn('Given configuration matches a '\
+                                                 'existing one; skipping'\
+                                                 ''.format(len(matches)))
+            raise LookupError()
+
+    conf_id = config.manage_config_matches(matches, conf_id)
+
+    mva_dir = os.path.join(outdir, 'mva_{}'.format(conf_id))
+
+    # Create the output directory
+    _aux._makedirs(mva_dir)
+
+    cfg_path = os.path.join(mva_dir, 'config.xml')
 
     # Save the configuration ID
     cfg['confid'] = str(conf_id)
 
     # Path to the file storing the MVA function
-    func_path = '{}/mva_func_{}.pkl'.format(mva_dir, conf_id)
+    func_path = os.path.join(mva_dir, 'func.pkl')
     cfg['funcfile'] = func_path
 
     # Generating the XML file must be the last thing to do
     cfg.save(cfg_path)
 
     # Display the configuration to run
-    print('*************************')
-    print('*** MVA configuration ***')
-    print('*************************')
-    print(cfg)
-    print('*************************')
+    print('''\
+*************************
+*** MVA configuration ***
+*************************'
+{}
+*************************\
+'''.format(cfg), flush=True)
 
     # Add the signal flag
     info('Adding the signal flag')
@@ -531,4 +551,4 @@ def mva_study( name, signame, sigsmp, bkgname, bkgsmp, cfg,
 
     info('Process finished!')
 
-    return mgr, train, test, conf_id
+    return mgr, train, test, mva_dir

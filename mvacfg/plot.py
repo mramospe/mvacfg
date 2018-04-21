@@ -50,7 +50,7 @@ def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 20 ):
 
     :returns: values of the drawn histograms: training \
     background, training signal, testing background, \
-    testing signal and the centers of the bins.
+    testing signal and the edges of the bins.
     :rtype: tuple(list(4:math:`\times` array-like), array-like)
     '''
     bkg_train = train[train[is_sig] == False]['mva_dec']
