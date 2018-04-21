@@ -29,8 +29,8 @@ __all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'manager_name', 'mva_study']
 
 
 # Global names for the MVA outputs
-__mva_dec__  = 'mva_dec'
-__mva_pred__ = 'mva_pred'
+__mva_proba__ = 'mva_proba'
+__mva_pred__  = 'mva_pred'
 
 # Global names for the signal flags
 __is_sig__   = 'is_sig'
@@ -110,29 +110,29 @@ class MVAmgr:
         # This returns a DataFrame with two columns, representing
         # the probability to belong to background or signal
         # hypotheses. We keep only the second.
-        dec = pandas.DataFrame(mva.predict_proba(smp),
+        proba = pandas.DataFrame(mva.predict_proba(smp),
                                index=smp.index)[[__sig_flag__]]
 
         pred = pandas.DataFrame(mva.predict(smp),
                                 index=smp.index)
 
-        return dec, pred
+        return proba, pred
 
-    def apply( self, sample, decname, predname ):
+    def apply( self, sample, probaname, predname ):
         '''
         Virtual method to apply the stored MVA method to the
         given sample.
 
         :param sample: input sample to apply the MVA method.
         :type sample: pandas.DataFrame
-        :param decname: name of the MVA response decision.
-        :type decname: str
+        :param probaname: name of the MVA response decision.
+        :type probaname: str
         :param predname: name of the MVA response prediction.
         :type predname: str
         '''
         raise NotImplementedError('Attempt to call abstract method')
 
-    def apply_for_overtraining( self, dt, sample, decname = __mva_dec__, predname = __mva_pred__ ):
+    def apply_for_overtraining( self, dt, sample, probaname = __mva_proba__, predname = __mva_pred__ ):
         '''
         Redefinition of the "apply" method given the sample type
         (train or test) to search for overtraining effects.
@@ -145,7 +145,7 @@ class MVAmgr:
         if dt not in ('train', 'test'):
             raise RuntimeError('Unknown data type "{}"'.format(dt))
 
-        return self.apply(sample, decname, predname)
+        return self.apply(sample, probaname, predname)
 
     def extravars( self ):
         '''
@@ -232,7 +232,7 @@ class KFoldMVAmgr(MVAmgr):
         '''
         return smp[self.splitvar] % self.nfolds == i
 
-    def apply( self, sample, decname = __mva_dec__, predname = __mva_pred__ ):
+    def apply( self, sample, probaname = __mva_proba__, predname = __mva_pred__ ):
         '''
         Calculate the values for the train and test samples. Apply
         to the full samples, and then split (save computational
@@ -240,8 +240,8 @@ class KFoldMVAmgr(MVAmgr):
 
         See :meth:`MVAmgr.apply`.
         '''
-        decs  = []
-        preds = []
+        probas = []
+        preds  = []
 
         smp = sample[self.features + self.extravars()]
 
@@ -251,13 +251,13 @@ class KFoldMVAmgr(MVAmgr):
 
             d, p = self._process(mva, s)
 
-            decs.append(d)
+            probas.append(d)
             preds.append(p)
 
-        sample[decname]  = pandas.concat(decs)
+        sample[probaname]  = pandas.concat(probas)
         sample[predname] = pandas.concat(preds)
 
-    def apply_for_overtraining( self, dt, sample, decname = __mva_dec__, predname = __mva_pred__ ):
+    def apply_for_overtraining( self, dt, sample, probaname = __mva_proba__, predname = __mva_pred__ ):
         '''
         In this case, the mean of the values of the BDT is taken.
 
@@ -267,10 +267,10 @@ class KFoldMVAmgr(MVAmgr):
             raise RuntimeError('Unknown data type "{}"'.format(dt))
 
         if dt == 'test':
-            self.apply(sample, decname, predname)
+            self.apply(sample, probaname, predname)
         else:
-            dec_df  = pandas.DataFrame()
-            pred_df = pandas.DataFrame()
+            proba_df = pandas.DataFrame()
+            pred_df  = pandas.DataFrame()
 
             info('Processing a training sample, this may '\
                 'take a while')
@@ -288,18 +288,18 @@ class KFoldMVAmgr(MVAmgr):
                 # In the cells corresponding to the test values,
                 # it is being filled with NaN. By default the
                 # mean is calculated skipping these numbers.
-                dec_df  = pandas.concat(
-                    [dec_df, d], axis=1, ignore_index=True)
+                proba_df = pandas.concat(
+                    [proba_df, d], axis=1, ignore_index=True)
                 pred_df = pandas.concat(
                     [pred_df, p], axis=1, ignore_index=True)
 
             info('Calculating mean of BDT values')
 
-            dm = dec_df.mean(axis=1)
+            dm = proba_df.mean(axis=1)
             pm = pred_df.mean(axis=1)
 
             # Study the deviation of the MVA values
-            maximum = dec_df.subtract(dm, axis=0).divide(
+            maximum = proba_df.subtract(dm, axis=0).divide(
                 dm, axis = 0).abs().max(axis=1)
 
             nmax = len(maximum[maximum >
@@ -311,7 +311,7 @@ class KFoldMVAmgr(MVAmgr):
                     '%'.format(nmax, len(sample),
                                KFoldMVAmgr.__min_tolerance__*100))
 
-            sample[decname]  = dm
+            sample[probaname]  = dm
             sample[predname] = pm
 
     def extravars( self ):
@@ -396,7 +396,7 @@ class StdMVAmgr(MVAmgr):
         self.sigtrainfrac = sigtrainfrac
         self.bkgtrainfrac = bkgtrainfrac
 
-    def apply( self, sample, decname = __mva_dec__, predname = __mva_pred__ ):
+    def apply( self, sample, probaname = __mva_proba__, predname = __mva_pred__ ):
         '''
         Calculate the MVA method values for the given sample.
 
@@ -404,10 +404,10 @@ class StdMVAmgr(MVAmgr):
         '''
         smp = sample[self.features]
 
-        dec, pred = self._process(self.mva, smp)
+        proba, pred = self._process(self.mva, smp)
 
-        sample[decname]  = dec
-        sample[predname] = pred
+        sample[probaname] = proba
+        sample[predname]  = pred
 
     def fit( self, sig, bkg, is_sig ):
         '''
@@ -432,7 +432,10 @@ class StdMVAmgr(MVAmgr):
 def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
                outdir = 'mva_outputs',
                is_sig = __is_sig__,
-               raise_if_matches = False):
+               raise_if_matches = False,
+               return_dir = False,
+               return_cid = False
+               ):
     '''
     Main function to perform a MVA study. The results are stored
     in three different files: one storing the histograms and the
@@ -463,9 +466,14 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     running many configurations. For example, if one wants to skip those \
     which have already been studied.
     :type raise_if_matches: bool
-    :returns: MVA manager, training and testing samples and the path where
-    the output is saved.
-    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame, str)
+    :param return_dir: if set to True, the directory where the outputs are \
+    saved is also returned.
+    :type return_dir: bool
+    :param return_cid: if set to True, return also the configuration ID.
+    :type return_cid: bool
+    :returns: MVA manager, training and testing samples it might also return \
+    the directory where the outputs are saved and the configuration ID.
+    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame (, str) (, int))
     :raises LookupError: if "raise_if_matches = True", and a configuration \
     matching the input is found.
     '''
@@ -551,4 +559,12 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
 
     info('Process finished!')
 
-    return mgr, train, test, mva_dir
+    robjs = (mgr, train, test)
+
+    if return_dir:
+        robjs += (mva_dir,)
+
+    if return_cid:
+        robjs += (conf_id,)
+
+    return robjs

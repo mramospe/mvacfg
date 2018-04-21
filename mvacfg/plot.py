@@ -19,12 +19,12 @@ from sklearn.metrics import roc_curve
 __all__ = ['ks_test', 'overtraining_hists', 'plot_overtraining_hists', 'ROC']
 
 
-def ks_test( mva_dec_A, mva_dec_B, maxpv ):
+def ks_test( mva_proba_A, mva_proba_B, maxpv ):
     '''
-    :param mva_dec_A: MVA output for sample A.
-    :type mva_dec_A: array-like
-    :param mva_dec_B: MVA output for sample B.
-    :type mva_dec_B: array-like
+    :param mva_proba_A: MVA output for sample A.
+    :type mva_proba_A: array-like
+    :param mva_proba_B: MVA output for sample B.
+    :type mva_proba_B: array-like
     :param maxpv: maximum value of the p-value of the KS \
     test to get a warning.
     :type maxpv: float
@@ -33,8 +33,8 @@ def ks_test( mva_dec_A, mva_dec_B, maxpv ):
 
     .. seealso:: :func:`scipy.stats.ks_2samp`
     '''
-    ks_stat, pvalue = st.ks_2samp(np.sort(mva_dec_A),
-                                  np.sort(mva_dec_B))
+    ks_stat, pvalue = st.ks_2samp(np.sort(mva_proba_A),
+                                  np.sort(mva_proba_B))
     if pvalue > maxpv:
         warnings.warn('Kolmogorov-Smirnov test rejects the '\
             'null hypothesis (p-value = {:.4f})'.format(pvalue))
@@ -53,11 +53,11 @@ def overtraining_hists( train, test, is_sig = 'is_sig', rg = None, nbins = 20 ):
     testing signal and the edges of the bins.
     :rtype: tuple(list(4:math:`\times` array-like), array-like)
     '''
-    bkg_train = train[train[is_sig] == False]['mva_dec']
-    sig_train = train[train[is_sig] == True]['mva_dec']
+    bkg_train = train[train[is_sig] == False]['mva_proba']
+    sig_train = train[train[is_sig] == True]['mva_proba']
 
-    bkg_test = test[test[is_sig] == False]['mva_dec']
-    sig_test = test[test[is_sig] == True]['mva_dec']
+    bkg_test = test[test[is_sig] == False]['mva_proba']
+    sig_test = test[test[is_sig] == True]['mva_proba']
 
     ss = (bkg_train, sig_train, bkg_test, sig_test)
 
@@ -113,15 +113,15 @@ def plot_overtraining_hists( train, test, where = None, **kwargs ):
     where.set_ylabel('Normalized entries')
 
 
-def ROC( sig_sta, mva_dec, **kwargs ):
+def ROC( sig_sta, mva_proba, **kwargs ):
     '''
     Calculate ROC curve giving the signal status  and the MVA method decision.
 
-    :param sig_sta: array with the signal status of "mva_dec". (True \
+    :param sig_sta: array with the signal status of "mva_proba". (True \
     for signal and False for background)
     :type sig_sta: array-like
-    :param mva_dec: array with the MVA response.
-    :type mva_dec: array-like
+    :param mva_proba: array with the MVA response.
+    :type mva_proba: array-like
     :param kwargs: extra arguments to sklearn.metrics.roc_curve.
     :type kwargs: dict
     :returns: background rejection and signal efficiency.
@@ -129,7 +129,7 @@ def ROC( sig_sta, mva_dec, **kwargs ):
 
     .. seealso:: :func:`sklearn.metrics.roc_curve`
     '''
-    bkg_eff, sig_eff, thresholds = roc_curve(sig_sta, mva_dec, **kwargs)
+    bkg_eff, sig_eff, thresholds = roc_curve(sig_sta, mva_proba, **kwargs)
     bkg_rej = 1. - bkg_eff
 
     return bkg_rej, sig_eff

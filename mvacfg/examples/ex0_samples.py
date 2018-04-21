@@ -24,7 +24,7 @@ from confmgr import Config, ConfMgr
 
 # mvacfg
 import mvacfg
-from mvacfg.core import __is_sig__, __mva_dec__
+from mvacfg.core import __is_sig__, __mva_proba__
 
 
 def main():
@@ -113,7 +113,7 @@ def main():
     ax0.set_ylabel('Normalized entries')
 
     for (s, data), c in zip(test_smps.iteritems(), ('b', 'r')):
-        bkg_rej, sig_eff = mvacfg.ROC(data[__is_sig__], data[__mva_dec__])
+        bkg_rej, sig_eff = mvacfg.ROC(data[__is_sig__], data[__mva_proba__])
         ax1.plot(bkg_rej, sig_eff, c = c, label = s)
     ax1.legend()
     ax1.set_xlabel('background rejection')
