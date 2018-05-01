@@ -45,22 +45,22 @@
 <p>Classes and function to plot MVA results using matplotlib.</p>
 <dl class="function">
 <dt id="mvacfg.plot.ks_test">
-<code class="descclassname">mvacfg.plot.</code><code class="descname">ks_test</code><span class="sig-paren">(</span><em>mva_dec_A</em>, <em>mva_dec_B</em>, <em>maxpv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/plot.html#ks_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.plot.ks_test" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">mvacfg.plot.</code><code class="descname">ks_test</code><span class="sig-paren">(</span><em>mva_proba_A</em>, <em>mva_proba_B</em>, <em>maxpv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/plot.html#ks_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.plot.ks_test" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mva_dec_A</strong> (<em>array-like</em>) – MVA output for sample A.</li>
-<li><strong>mva_dec_B</strong> (<em>array-like</em>) – MVA output for sample B.</li>
-<li><strong>maxpv</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – maximum value of the p-value of the KS     test to get a warning.</li>
+<li><strong>mva_proba_A</strong> (<em>array-like</em>) – MVA output for sample A.</li>
+<li><strong>mva_proba_B</strong> (<em>array-like</em>) – MVA output for sample B.</li>
+<li><strong>maxpv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – maximum value of the p-value of the KS     test to get a warning.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">KS test statistics and p-value</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)">tuple</a>(<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)">float</a>, <a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)">float</a>)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)">tuple</a>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)">float</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)">float</a>)</p>
 </td>
 </tr>
 </tbody>
@@ -73,7 +73,7 @@
 
 <dl class="function">
 <dt id="mvacfg.plot.overtraining_hists">
-<code class="descclassname">mvacfg.plot.</code><code class="descname">overtraining_hists</code><span class="sig-paren">(</span><em>train</em>, <em>test</em>, <em>is_sig='is_sig'</em>, <em>rg=None</em>, <em>nbins=100</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/plot.html#overtraining_hists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.plot.overtraining_hists" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">mvacfg.plot.</code><code class="descname">overtraining_hists</code><span class="sig-paren">(</span><em>train</em>, <em>test</em>, <em>is_sig='is_sig'</em>, <em>bins=20</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/plot.html#overtraining_hists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.plot.overtraining_hists" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make the overtraining histograms from the training and
 testing samples. To make these histograms and plot the
 results see <a class="reference internal" href="#mvacfg.plot.plot_overtraining_hists" title="mvacfg.plot.plot_overtraining_hists"><code class="xref py py-func docutils literal"><span class="pre">plot_overtraining_hists()</span></code></a>.</p>
@@ -81,9 +81,9 @@ results see <a class="reference internal" href="#mvacfg.plot.plot_overtraining_h
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">values of the drawn histograms: training     background, training signal, testing background,     testing signal and the centers of the bins.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">values of the drawn histograms: training     background, training signal, testing background,     testing signal and the edges of the bins.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)">tuple</a>(list(4:math:` imes` array-like), array-like)</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)">tuple</a>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)">list</a>(4:math:` imes` array-like), array-like)</td>
 </tr>
 </tbody>
 </table>
@@ -99,23 +99,23 @@ configuration.</p>
 
 <dl class="function">
 <dt id="mvacfg.plot.ROC">
-<code class="descclassname">mvacfg.plot.</code><code class="descname">ROC</code><span class="sig-paren">(</span><em>sig_sta</em>, <em>mva_dec</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/plot.html#ROC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.plot.ROC" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">mvacfg.plot.</code><code class="descname">ROC</code><span class="sig-paren">(</span><em>sig_sta</em>, <em>mva_proba</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mvacfg/plot.html#ROC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mvacfg.plot.ROC" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate ROC curve giving the signal status  and the MVA method decision.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>sig_sta</strong> (<em>array-like</em>) – array with the signal status of “mva_dec”. (True     for signal and False for background)</li>
-<li><strong>mva_dec</strong> (<em>array-like</em>) – array with the MVA response.</li>
-<li><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – extra arguments to sklearn.metrics.roc_curve.</li>
+<li><strong>sig_sta</strong> (<em>array-like</em>) – array with the signal status of “mva_proba”. (True     for signal and False for background)</li>
+<li><strong>mva_proba</strong> (<em>array-like</em>) – array with the MVA response.</li>
+<li><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – extra arguments to sklearn.metrics.roc_curve.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">background rejection and signal efficiency.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)">tuple</a>(array-like, array-like)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.6)">tuple</a>(array-like, array-like)</p>
 </td>
 </tr>
 </tbody>
@@ -176,7 +176,7 @@ configuration.</p>
       &copy;2017, Miguel Ramos Pernas.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
