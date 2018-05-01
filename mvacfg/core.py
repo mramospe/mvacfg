@@ -64,11 +64,11 @@ def manager_name():
 
 
 class MVAmgr:
-    '''
-    Main class to store and apply a MVA algorithm.
-    '''
+
     def __init__( self, classifier, features ):
         '''
+        Main class to store and apply a MVA algorithm.
+
         :param classifier: input MVA classifier.
         :type classifier: MVA classifier
         :param features: variables to use for training.
@@ -181,16 +181,15 @@ class MVAmgr:
 
 
 class KFoldMVAmgr(MVAmgr):
-    '''
-    Manager that uses the k-folding technique, splitting the total
-    sample in "n" folds, using "n - 1" to train the remaining
-    fold, which is used as a test sample.
-    '''
+
     __min_tolerance__ = 0.1
 
     def __init__( self, classifier, features, splitvar, nfolds = 2 ):
         '''
-        Constructor given the classifier, features, number of
+        Manager that uses the k-folding technique, splitting the total
+        sample in "n" folds, using "n - 1" to train the remaining
+        fold, which is used as a test sample.
+        It is built given the classifier, features, number of
         folds and the integer variable used to split the sample.
 
         See :meth:`MVAmgr.__init__`.
@@ -378,18 +377,18 @@ class KFoldMVAmgr(MVAmgr):
 
 
 class StdMVAmgr(MVAmgr):
-    '''
-    Manager that uses the standard procedure of splitting the
-    samples given the training and testing fractions.
-    '''
+
     def __init__( self, classifier, features, sigtrainfrac = 0.75, bkgtrainfrac = 0.75 ):
         '''
-        See :meth:`MVAmgr.__init__`.
+        Manager that uses the standard procedure of splitting the
+        samples given the training and testing fractions.
 
         :param sigtrainfrac: fraction of signal events used for training.
         :type sigtrainfrac: float
         :param bkgtrainfrac: fraction of background events used for training.
         :type bkgtrainfrac: float
+
+        .. seealso:: :meth:`MVAmgr.__init__`.
         '''
         MVAmgr.__init__(self, classifier, features )
 
