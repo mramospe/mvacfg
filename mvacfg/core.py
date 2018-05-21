@@ -257,7 +257,7 @@ class KFoldMVAmgr(MVAmgr):
 
         for i, mva in enumerate(self.mvas):
 
-            s = sample[self._true_cond(smp, i)][self.features]
+            s = sample[self._true_cond(sample, i)][self.features]
 
             d, p = self._process(mva, s)
 
