@@ -139,6 +139,12 @@ class MVAmgr:
 
         :param dt: type of the input sample.
         :type dt: str ('train' or 'test')
+        :param sample: input sample to apply the MVA method.
+        :type sample: pandas.DataFrame
+        :param probaname: name of the MVA response decision.
+        :type probaname: str
+        :param predname: name of the MVA response prediction.
+        :type predname: str
 
         .. seealso:: :meth:`MVAmgr.apply`.
         '''
@@ -192,12 +198,12 @@ class KFoldMVAmgr(MVAmgr):
         It is built given the classifier, features, number of
         folds and the integer variable used to split the sample.
 
-        See :meth:`MVAmgr.__init__`.
-
         :param splitvar: variable used to split the sample in folds.
         :type splitvar: str
         :param nfolds: number of folds to generate.
         :type nfolds: int
+
+        .. seealso:: :meth:`MVAmgr.__init__`.
         '''
         MVAmgr.__init__(self, classifier, features)
 
@@ -237,16 +243,21 @@ class KFoldMVAmgr(MVAmgr):
         to the full samples, and then split (save computational
         time).
 
-        See :meth:`MVAmgr.apply`.
+        :param sample: input sample to apply the MVA method.
+        :type sample: pandas.DataFrame
+        :param probaname: name of the MVA response decision.
+        :type probaname: str
+        :param predname: name of the MVA response prediction.
+        :type predname: str
+
+        .. seealso:: :meth:`MVAmgr.apply`.
         '''
         probas = []
         preds  = []
 
-        smp = sample[self.features + self.extravars()]
-
         for i, mva in enumerate(self.mvas):
 
-            s = smp[self._true_cond(smp, i)][self.features]
+            s = sample[self._true_cond(smp, i)][self.features]
 
             d, p = self._process(mva, s)
 
@@ -260,7 +271,7 @@ class KFoldMVAmgr(MVAmgr):
         '''
         In this case, the mean of the values of the BDT is taken.
 
-        See :meth:`MVAmgr.apply_for_overtraining`.
+        .. seealso:: :meth:`MVAmgr.apply_for_overtraining`.
         '''
         if dt not in ('train', 'test'):
             raise RuntimeError('Unknown data type "{}"'.format(dt))
@@ -315,13 +326,27 @@ class KFoldMVAmgr(MVAmgr):
 
     def extravars( self ):
         '''
-        See :meth:`MVAmgr.extravars`.
+        :returns: extra variables needed for the class.
+        :rtype: list
+
+        .. seealso:: :meth:`MVAmgr.extravars`.
         '''
         return [self.splitvar]
 
     def fit( self, sig, bkg, is_sig ):
         '''
-        See :meth:`MVAmgr.fit`.
+        Fit the MVA classifier to the given sample.
+
+        :param sig: signal sample.
+        :type sig: pandas.DataFrame
+        :param bkg: background sample.
+        :type bkg: pandas.DataFrame
+        :param is_sig: signal flag.
+        :type is_sig: str
+        :returns: training and testing data samples.
+        :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
+
+        .. seealso:: :meth:`MVAmgr.fit`.
         '''
         train_dlst = []
         test_dlst  = []
@@ -399,7 +424,14 @@ class StdMVAmgr(MVAmgr):
         '''
         Calculate the MVA method values for the given sample.
 
-        See :meth:`MVAmgr.apply`.
+        :param sample: input sample to apply the MVA method.
+        :type sample: pandas.DataFrame
+        :param probaname: name of the MVA response decision.
+        :type probaname: str
+        :param predname: name of the MVA response prediction.
+        :type predname: str
+
+        .. seealso:: :meth:`MVAmgr.apply`.
         '''
         smp = sample[self.features]
 
@@ -410,7 +442,18 @@ class StdMVAmgr(MVAmgr):
 
     def fit( self, sig, bkg, is_sig ):
         '''
-        See :meth:`MVAmgr.fit`.
+        Fit the MVA classifier to the given sample.
+
+        :param sig: signal sample.
+        :type sig: pandas.DataFrame
+        :param bkg: background sample.
+        :type bkg: pandas.DataFrame
+        :param is_sig: signal flag.
+        :type is_sig: str
+        :returns: training and testing data samples.
+        :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
+
+        .. seealso:: :meth:`MVAmgr.fit`.
         '''
         info('Divide data in train and test samples')
 
