@@ -8,14 +8,15 @@ __email__  = 'miguel.ramos.pernas@cern.ch'
 
 
 # Python
-import importlib, inspect, joblib, logging, os, pandas
+import confmgr
+import joblib
+import logging
 import numpy as np
+import os
+import pandas
 import warnings
 from collections import OrderedDict as odict
 from copy import deepcopy
-
-# confmgr
-import confmgr
 
 # Scikit-learn
 from sklearn.model_selection import train_test_split
@@ -319,7 +320,8 @@ class KFoldMVAmgr(MVAmgr):
                 warnings.warn('Found {} points (out of {}) with '\
                     'a deviation on the MVA value greater than {} '\
                     '%'.format(nmax, len(sample),
-                               KFoldMVAmgr.__min_tolerance__*100))
+                               KFoldMVAmgr.__min_tolerance__*100),
+                              RuntimeWarning)
 
             sample[probaname]  = dm
             sample[predname] = pm
@@ -476,7 +478,8 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
                is_sig = __is_sig__,
                raise_if_matches = False,
                return_dir = False,
-               return_cid = False
+               return_cid = False,
+               extra_cfg = None
                ):
     '''
     Main function to perform a MVA study. The results are stored
@@ -513,6 +516,8 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     :type return_dir: bool
     :param return_cid: if set to True, return also the configuration ID.
     :type return_cid: bool
+    :param extra_cfg: additional configuration to be stored with the main manager.
+    :type extra_cfg: dict
     :returns: MVA manager, training and testing samples it might also return \
     the directory where the outputs are saved and the configuration ID.
     :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame (, str) (, int))
@@ -566,6 +571,16 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     func_path = os.path.join(mva_dir, 'func.pkl')
     cfg['funcfile'] = func_path
 
+    # Save the extra configuration if provided
+    if extra_cfg is not None:
+        for k, v in extra_cfg.items():
+            if k in cfg:
+                warnings.warn(
+                    'Extra configuration argument "{}" attempts to override '\
+                        'an existing key, skipping it'.format(k), RuntimeWarning)
+            else:
+                cfg[k] = v
+
     # Generating the XML file must be the last thing to do
     cfg.save(cfg_path)
 
@@ -573,7 +588,7 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     print('''\
 *************************
 *** MVA configuration ***
-*************************'
+*************************
 {}
 *************************\
 '''.format(cfg), flush=True)
