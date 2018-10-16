@@ -78,7 +78,7 @@ class MVAmgr:
         self.classifier = classifier
         self.features   = list(features)
 
-    def _fit( self, train_data, is_sig ):
+    def _fit( self, train_data, is_sig, sample_weight = None ):
         '''
         Fit the MVA classifier to the given samples.
 
@@ -86,14 +86,28 @@ class MVAmgr:
         :type train_data: pandas.DataFrame
         :param is_sig: flag to determine the signal condition.
         :type is_sig: str
+        :param sample_weight: possible weights to perform a weighted training.
+        :type sample_weight: numpy.ndarray or None
         :returns: trained MVA classifier.
         :rtype: MVA classifier
         '''
         info('Perform MVA training')
         mva = self.classifier.fit(train_data[self.features],
-                                  train_data[is_sig])
+                                  train_data[is_sig],
+                                  sample_weight=sample_weight)
         info('MVA training finished')
         return mva
+
+    def _handle_weights( self, smp, weights ):
+        '''
+        Remove the column "weights" from "smp" and normalize the array
+        to the length of "smp".
+        '''
+        sw = smp.pop(weights)
+
+        sw = sw*1./sw.sum()*len(smp)
+
+        return sw
 
     def _process( self, mva, smp ):
         '''
@@ -161,7 +175,7 @@ class MVAmgr:
         '''
         return []
 
-    def fit( self, sig, bkg, is_sig ):
+    def fit( self, sig, bkg, is_sig, weights = None ):
         '''
         Fit the MVA classifier to the given sample.
 
@@ -171,6 +185,8 @@ class MVAmgr:
         :type bkg: pandas.DataFrame
         :param is_sig: signal flag.
         :type is_sig: str
+        :param weights: possible name of the column holding the weights.
+        :type weights: str or None
         :returns: training and testing data samples.
         :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
         '''
@@ -313,8 +329,7 @@ class KFoldMVAmgr(MVAmgr):
             maximum = proba_df.subtract(dm, axis=0).divide(
                 dm, axis = 0).abs().max(axis=1)
 
-            nmax = len(maximum[maximum >
-                               KFoldMVAmgr.__min_tolerance__])
+            nmax = len(maximum[maximum > KFoldMVAmgr.__min_tolerance__])
 
             if nmax > 1:
                 warnings.warn('Found {} points (out of {}) with '\
@@ -323,8 +338,8 @@ class KFoldMVAmgr(MVAmgr):
                                KFoldMVAmgr.__min_tolerance__*100),
                               RuntimeWarning)
 
-            sample[probaname]  = dm
-            sample[predname] = pm
+            sample[probaname] = dm
+            sample[predname]  = pm
 
     def extravars( self ):
         '''
@@ -335,7 +350,7 @@ class KFoldMVAmgr(MVAmgr):
         '''
         return [self.splitvar]
 
-    def fit( self, sig, bkg, is_sig ):
+    def fit( self, sig, bkg, is_sig, weights = None ):
         '''
         Fit the MVA classifier to the given sample.
 
@@ -345,6 +360,8 @@ class KFoldMVAmgr(MVAmgr):
         :type bkg: pandas.DataFrame
         :param is_sig: signal flag.
         :type is_sig: str
+        :param weights: possible name of the column holding the weights.
+        :type weights: str or None
         :returns: training and testing data samples.
         :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
 
@@ -359,21 +376,27 @@ class KFoldMVAmgr(MVAmgr):
             info('Processing fold number {}'.format(i + 1), indent=1)
 
             info('Split signal sample', indent=2)
-            train_sig = self.train_sample(sig, i)
+            train_sig, train_sig_wgts = self.train_sample(sig, i, weights)
 
             info('Split background sample', indent=2)
-            train_bkg = self.train_sample(bkg, i)
+            train_bkg, train_bkg_wgts = self.train_sample(bkg, i, weights)
 
             info('Merge training samples', indent=2)
             train_data = pandas.concat([train_sig, train_bkg],
-                                       ignore_index=True)
+                                       ignore_index=True, sort=False)
+
+            if weights is not None:
+                sample_weight = pandas.concat([train_sig_wgts, train_bkg_wgts],
+                                              ignore_index=True, sort=False)
+            else:
+                sample_weight = None
 
             # The MVA must be a new instance of the classifier type
-            mva = deepcopy(self._fit(train_data, is_sig))
+            mva = deepcopy(self._fit(train_data, is_sig, sample_weight))
 
             mvas.append(mva)
 
-        train_data = pandas.concat([sig, bkg], ignore_index=True)
+        train_data = pandas.concat([sig, bkg], ignore_index=True, sort=False)
         test_data  = train_data.copy()
 
         self.mvas = mvas
@@ -391,16 +414,27 @@ class KFoldMVAmgr(MVAmgr):
         '''
         return smp[self._true_cond(smp, i)]
 
-    def train_sample( self, smp, i ):
+    def train_sample( self, smp, i, weights = None ):
         '''
         :param smp: input sample.
         :type smp: pandas.DataFrame
         :param i: fold number.
         :type i: int
+        :param weights: possible name of the column holding the weights.
+        :type weights: str or None
         :returns: subsample satisfying the training  condition.
         :rtype: pandas.DataFrame
         '''
-        return smp[self._false_cond(smp, i)]
+        c = self._false_cond(smp, i)
+
+        out = smp[c]
+
+        if weights is None:
+            sw = None
+        else:
+            sw = self._handle_weights(out, weights)
+
+        return out, sw
 
 
 class StdMVAmgr(MVAmgr):
@@ -442,7 +476,7 @@ class StdMVAmgr(MVAmgr):
         sample[probaname] = proba
         sample[predname]  = pred
 
-    def fit( self, sig, bkg, is_sig ):
+    def fit( self, sig, bkg, is_sig, weights = None ):
         '''
         Fit the MVA classifier to the given sample.
 
@@ -452,6 +486,8 @@ class StdMVAmgr(MVAmgr):
         :type bkg: pandas.DataFrame
         :param is_sig: signal flag.
         :type is_sig: str
+        :param weights: possible name of the column holding the weights.
+        :type weights: str or None
         :returns: training and testing data samples.
         :rtype: tuple(pandas.DataFrame, pandas.DataFrame)
 
@@ -464,22 +500,43 @@ class StdMVAmgr(MVAmgr):
         info('Background train fraction: {}'.format(self.bkgtrainfrac), indent=1)
         train_bkg, test_bkg = train_test_split(bkg, train_size=self.bkgtrainfrac)
 
-        info('Merging training and test samples')
-        train_data = pandas.concat([train_sig, train_bkg], ignore_index=True)
-        test_data  = pandas.concat([test_sig, test_bkg], ignore_index=True)
+        if weights is not None:
 
-        self.mva = deepcopy(self._fit(train_data, is_sig))
+            train_bkg_wgts = self._handle_weights(train_bkg, weights)
+            train_sig_wgts = self._handle_weights(train_sig, weights)
+
+            test_bkg_wgts = self._handle_weights(test_bkg, weights)
+            test_sig_wgts = self._handle_weights(test_sig, weights)
+
+            train_wgts = pandas.concat([train_bkg_wgts, train_sig_wgts], ignore_index=True, sort=False)
+            test_wgts  = pandas.concat([test_bkg_wgts, test_sig_wgts], ignore_index=True, sort=False)
+
+        else:
+
+            train_wgts = None
+            test_wgts  = None
+
+        info('Merging training and test samples')
+        train_data = pandas.concat([train_sig, train_bkg], ignore_index=True, sort=False)
+        test_data  = pandas.concat([test_sig, test_bkg], ignore_index=True, sort=False)
+
+        self.mva = deepcopy(self._fit(train_data, is_sig, train_wgts))
+
+        if weights is not None:
+            train_data[weights] = train_wgts
+            test_data[weights]  = test_wgts
 
         return train_data, test_data
 
 
 def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
                outdir = 'mva_outputs',
+               weights = None,
                is_sig = __is_sig__,
                raise_if_matches = False,
                return_dir = False,
                return_cid = False,
-               extra_cfg = None
+               extra_cfg = None,
                ):
     '''
     Main function to perform a MVA study. The results are stored
@@ -503,6 +560,9 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     ID of the study so, assuming the default value, it would be under \
     "mva_outputs/mva_<configuration ID>".
     :type outdir: str
+    :param weights: name of the column representing the weights of the \
+    samples.
+    :type weights: str or None
     :param is_sig: name for the additional column holding the \
     signal condition.
     :type is_sig: str
@@ -533,6 +593,9 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
             ('outdir' , outdir)
             ):
         cfg[k] = v
+
+    if weights is not None:
+        cfg['weights'] = weights
 
     # Get the manager
     mgr = cfg.proc_conf()[__manager_name__]
@@ -604,7 +667,7 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
 
     # Train the MVA method
     info('Initialize training')
-    train, test = mgr.fit(sigsmp, bkgsmp, is_sig)
+    train, test = mgr.fit(sigsmp, bkgsmp, is_sig, weights)
 
     # Save the output method(s)
     mgr.save(func_path)

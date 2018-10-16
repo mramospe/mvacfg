@@ -42,29 +42,45 @@ def ks_test( mva_proba_A, mva_proba_B, maxpv ):
     return ks_stat, pvalue
 
 
-def overtraining_hists( train, test, is_sig = 'is_sig', bins = 20 ):
+def overtraining_hists( train, test, is_sig = 'is_sig', weights = None, bins = 20 ):
     '''
     Make the overtraining histograms from the training and
     testing samples. To make these histograms and plot the
     results see :func:`plot_overtraining_hists`.
 
+    :param train: training sample.
+    :type train: pandas.DataFrame
+    :param test: test sample.
+    :type test: pandas.DataFrame
+    :param is_sig: flag that defines the signal component.
+    :type is_sig: bool
+    :param weights: name of the column representing possible weights in the \
+    samples.
+    :type weights: str
+    :param bins: bins to consider for the histogram.
+    :type bins: see :func:`numpy.histogram`
     :returns: values of the drawn histograms: training \
     background, training signal, testing background, \
     testing signal and the edges of the bins.
     :rtype: tuple(list(4:math:`\times` array-like), array-like)
     '''
-    bkg_train = train[train[is_sig] == False]['mva_proba']
-    sig_train = train[train[is_sig] == True]['mva_proba']
+    bkg_train = train[train[is_sig] == False]
+    sig_train = train[train[is_sig] == True]
 
-    bkg_test = test[test[is_sig] == False]['mva_proba']
-    sig_test = test[test[is_sig] == True]['mva_proba']
+    bkg_test = test[test[is_sig] == False]
+    sig_test = test[test[is_sig] == True]
 
     ss = (bkg_train, sig_train, bkg_test, sig_test)
 
     hists = []
-
     for s in ss:
-        values, edges = np.histogram(s, bins=bins, range=(0, 1))
+
+        if weights is not None:
+            wgts = s[weights]
+        else:
+            wgts = None
+
+        values, edges = np.histogram(s['mva_proba'], bins=bins, range=(0, 1), weights=wgts)
         hists.append(values)
 
     return hists, edges
