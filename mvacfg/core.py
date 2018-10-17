@@ -14,6 +14,7 @@ import logging
 import numpy as np
 import os
 import pandas
+import shutil
 import warnings
 from collections import OrderedDict as odict
 from copy import deepcopy
@@ -26,7 +27,7 @@ import mvacfg._aux as _aux
 import mvacfg.config as config
 
 
-__all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'manager_name', 'mva_study']
+__all__ = ['MVAmgr', 'KFoldMVAmgr', 'StdMVAmgr', 'manager_name', 'mva_study', 'mva_study_with_id']
 
 
 # Global names for the MVA outputs
@@ -529,15 +530,160 @@ class StdMVAmgr(MVAmgr):
         return train_data, test_data
 
 
+def _do_mva_study( sigsmp, bkgsmp, cfg, outdir, weights, is_sig ):
+    '''
+    Do an MVA study.
+
+    :param sigsmp: signal sample.
+    :type sigsmp: pandas.DataFrame
+    :param bkgsmp: background sample.
+    :type bkgsmp: pandas.DataFrame
+    :param cfg: configurable for the MVA manager.
+    :type cfg: ConfMgr or dict
+    :param outdir: output directory. By default is set to "mva_outputs". \
+    The full output directory is actually determined from the configuration \
+    ID of the study so, assuming the default value, it would be under \
+    "mva_outputs/mva_<configuration ID>".
+    :type outdir: str
+    :param weights: name of the column representing the weights of the \
+    samples.
+    :type weights: str or None
+    :param is_sig: name for the additional column holding the \
+    signal condition.
+    :type is_sig: str
+    '''
+    # Create the output directory
+    _aux._makedirs(outdir)
+
+    cfg_path = os.path.join(outdir, 'config.xml')
+
+    # Path to the file storing the MVA function
+    func_path = os.path.join(outdir, 'func.pkl')
+    cfg['funcfile'] = func_path
+
+    # Generating the XML file must be the last thing to do
+    cfg.save(cfg_path)
+
+    # Display the configuration to run
+    print('''\
+*************************
+*** MVA configuration ***
+*************************
+{}
+*************************\
+'''.format(cfg), flush=True)
+
+    # Add the signal flag
+    info('Adding the signal flag')
+
+    sigsmp = sigsmp.copy()
+    sigsmp[is_sig] = __sig_flag__
+
+    bkgsmp = bkgsmp.copy()
+    bkgsmp[is_sig] = __bkg_flag__
+
+    # Build the MVA manager
+    mgr = cfg.proc_conf()[__manager_name__]
+
+    # Train the MVA method
+    info('Initialize training')
+    train, test = mgr.fit(sigsmp, bkgsmp, is_sig, weights)
+
+    # Save the output method(s)
+    mgr.save(func_path)
+
+    # Apply the MVA method
+    info('Apply the trained MVA algorithm')
+    for tp, smp in (('train', train), ('test', test)):
+        mgr.apply_for_overtraining(tp, smp)
+
+    info('Process finished!')
+
+    return mgr, train, test
+
+
 def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
                outdir = 'mva_outputs',
                weights = None,
                is_sig = __is_sig__,
-               raise_if_matches = False,
+               overwrite_if_exists = False,
                return_dir = False,
-               return_cid = False,
-               extra_cfg = None,
+               extra_cfg = None
                ):
+    '''
+    Main function to perform a MVA study. The results are stored
+    in three different files: one storing the histograms and the
+    ROC curve, another with the configuration used to run this
+    function, and the last stores the proper class to store the
+    MVA algorithm.
+
+    :param signame: signal sample name.
+    :type signame: str
+    :param sigsmp: signal sample.
+    :type sigsmp: pandas.DataFrame
+    :param bkgname: background sample name.
+    :type bkgname: str
+    :param bkgsmp: background sample.
+    :type bkgsmp: pandas.DataFrame
+    :param cfg: configurable for the MVA manager.
+    :type cfg: ConfMgr or dict
+    :param outdir: output directory. By default is set to "mva_outputs". \
+    The full output directory is actually determined from the configuration \
+    ID of the study so, assuming the default value, it would be under \
+    "mva_outputs/mva_<configuration ID>".
+    :type outdir: str
+    :param weights: name of the column representing the weights of the \
+    samples.
+    :type weights: str or None
+    :param is_sig: name for the additional column holding the \
+    signal condition.
+    :type is_sig: str
+    :param overwrite_if_exists: if set to True, then the output directory will \
+    be recreated if it exists. Otherwise, it raises RuntimeError.
+    :type overwrite_if_exists: bool
+    :param return_dir: if set to True, the directory where the outputs are \
+    saved is also returned.
+    :type return_dir: bool
+    :param extra_cfg: additional configuration to be stored with the main manager.
+    :type extra_cfg: dict
+    :returns: MVA manager, training and testing samples it might also return \
+    the directory where the outputs are saved.
+    :rtype: tuple(MVAmgr, pandas.DataFrame, pandas.DataFrame (, str))
+    :raises RuntimeError: if "overwrite_if_exists = False", and a the output \
+    directory already exists. Or if an attempt is made to overwrite a file \
+    with the name of the directory.
+    '''
+    cfg = _preprocess_study_args(signame, bkgname, cfg, outdir, weights, extra_cfg)
+
+    if os.path.exists(outdir):
+
+        if overwrite_if_exists:
+
+            if not os.path.isdir(outdir):
+                raise RuntimeError('Attempt to overwrite a file with the name of the output directory')
+
+            shutil.rmtree(outdir)
+
+        else:
+            raise RuntimeError('Output directory already exists; run with "overwrite_if_exists=True" to overwrite it')
+
+    robjs = _do_mva_study(sigsmp, bkgsmp, cfg, outdir, weights, is_sig)
+
+    if return_dir:
+        robjs += (outdir,)
+
+    return robjs
+
+
+def mva_study_with_id( signame, sigsmp, bkgname, bkgsmp, cfg,
+                       outdir = 'mva_outputs',
+                       weights = None,
+                       is_sig = __is_sig__,
+                       raise_if_matches = False,
+                       return_dir = False,
+                       return_cid = False,
+                       extra_cfg = None,
+                       ):
     '''
     Main function to perform a MVA study. The results are stored
     in three different files: one storing the histograms and the
@@ -584,35 +730,11 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     :raises LookupError: if "raise_if_matches = True", and a configuration \
     matching the input is found.
     '''
-    cfg = confmgr.ConfMgr(**{__manager_name__ : cfg})
-
-    # Get the raw configuration from the inputs
-    for k, v in (
-            ('signame', signame),
-            ('bkgname', bkgname),
-            ('outdir' , outdir)
-            ):
-        cfg[k] = v
-
-    if weights is not None:
-        cfg['weights'] = weights
+    cfg = _preprocess_study_args(signame, bkgname, cfg, outdir, weights, extra_cfg)
 
     # Initialize these two keys so they appear in the manager schema
     cfg['confid']   = None
     cfg['funcfile'] = None
-
-    # Save the extra configuration if provided
-    if extra_cfg is not None:
-        for k, v in extra_cfg.items():
-            if k in cfg:
-                warnings.warn(
-                    'Extra configuration argument "{}" attempts to override '\
-                        'an existing key, skipping it'.format(k), RuntimeWarning)
-            else:
-                cfg[k] = v
-
-    # Get the manager
-    mgr = cfg.proc_conf()[__manager_name__]
 
     # Get the available configuration ID
     cfglst  = confmgr.get_configurations(outdir, 'mva_.*/config.xml$')
@@ -636,54 +758,10 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
 
     mva_dir = os.path.join(outdir, 'mva_{}'.format(conf_id))
 
-    # Create the output directory
-    _aux._makedirs(mva_dir)
-
-    cfg_path = os.path.join(mva_dir, 'config.xml')
-
     # Save the configuration ID
     cfg['confid'] = str(conf_id)
 
-    # Path to the file storing the MVA function
-    func_path = os.path.join(mva_dir, 'func.pkl')
-    cfg['funcfile'] = func_path
-
-    # Generating the XML file must be the last thing to do
-    cfg.save(cfg_path)
-
-    # Display the configuration to run
-    print('''\
-*************************
-*** MVA configuration ***
-*************************
-{}
-*************************\
-'''.format(cfg), flush=True)
-
-    # Add the signal flag
-    info('Adding the signal flag')
-
-    sigsmp = sigsmp.copy()
-    sigsmp[is_sig] = __sig_flag__
-
-    bkgsmp = bkgsmp.copy()
-    bkgsmp[is_sig] = __bkg_flag__
-
-    # Train the MVA method
-    info('Initialize training')
-    train, test = mgr.fit(sigsmp, bkgsmp, is_sig, weights)
-
-    # Save the output method(s)
-    mgr.save(func_path)
-
-    # Apply the MVA method
-    info('Apply the trained MVA algorithm')
-    for tp, smp in (('train', train), ('test', test)):
-        mgr.apply_for_overtraining(tp, smp)
-
-    info('Process finished!')
-
-    robjs = (mgr, train, test)
+    robjs = _do_mva_study(sigsmp, bkgsmp, cfg, mva_dir, weights, is_sig)
 
     if return_dir:
         robjs += (mva_dir,)
@@ -692,3 +770,53 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
         robjs += (conf_id,)
 
     return robjs
+
+
+def _preprocess_study_args( signame, bkgname, cfg, outdir, weights, extra_cfg ):
+    '''
+    Pre-process the arguments to be used on a MVA study. Returns the
+    manager and configuration manager to use.
+
+    :param signame: signal sample name.
+    :type signame: str
+    :param bkgname: background sample name.
+    :type bkgname: str
+    :param cfg: configurable for the MVA manager.
+    :type cfg: ConfMgr or dict
+    :param outdir: output directory. By default is set to "mva_outputs". \
+    The full output directory is actually determined from the configuration \
+    ID of the study so, assuming the default value, it would be under \
+    "mva_outputs/mva_<configuration ID>".
+    :type outdir: str
+    :param weights: name of the column representing the weights of the \
+    samples.
+    :type weights: str or None
+    :param extra_cfg: additional configuration to be stored with the main manager.
+    :type extra_cfg: dict
+    :returns: configuration to run.
+    :rtype: ConfMgr
+    '''
+    cfg = confmgr.ConfMgr(**{__manager_name__ : cfg})
+
+    # Get the raw configuration from the inputs
+    for k, v in (
+        ('signame', signame),
+        ('bkgname', bkgname),
+        ('outdir' , outdir)
+        ):
+        cfg[k] = v
+
+    if weights is not None:
+        cfg['weights'] = weights
+
+    # Save the extra configuration if provided
+    if extra_cfg is not None:
+        for k, v in extra_cfg.items():
+            if k in cfg:
+                warnings.warn(
+                    'Extra configuration argument "{}" attempts to override '\
+                        'an existing key, skipping it'.format(k), RuntimeWarning)
+            else:
+                cfg[k] = v
+
+    return cfg
