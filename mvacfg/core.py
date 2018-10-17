@@ -597,6 +597,20 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     if weights is not None:
         cfg['weights'] = weights
 
+    # Initialize these two keys so they appear in the manager schema
+    cfg['confid']   = None
+    cfg['funcfile'] = None
+
+    # Save the extra configuration if provided
+    if extra_cfg is not None:
+        for k, v in extra_cfg.items():
+            if k in cfg:
+                warnings.warn(
+                    'Extra configuration argument "{}" attempts to override '\
+                        'an existing key, skipping it'.format(k), RuntimeWarning)
+            else:
+                cfg[k] = v
+
     # Get the manager
     mgr = cfg.proc_conf()[__manager_name__]
 
@@ -633,16 +647,6 @@ def mva_study( signame, sigsmp, bkgname, bkgsmp, cfg,
     # Path to the file storing the MVA function
     func_path = os.path.join(mva_dir, 'func.pkl')
     cfg['funcfile'] = func_path
-
-    # Save the extra configuration if provided
-    if extra_cfg is not None:
-        for k, v in extra_cfg.items():
-            if k in cfg:
-                warnings.warn(
-                    'Extra configuration argument "{}" attempts to override '\
-                        'an existing key, skipping it'.format(k), RuntimeWarning)
-            else:
-                cfg[k] = v
 
     # Generating the XML file must be the last thing to do
     cfg.save(cfg_path)
